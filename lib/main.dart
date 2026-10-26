@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'data/store.dart';
 import 'services/background.dart';
 import 'services/notifier.dart';
+import 'ui/net_image.dart';
 import 'ui/shell.dart';
 import 'ui/theme.dart';
 
@@ -22,6 +23,7 @@ Future<void> main() async {
     systemNavigationBarIconBrightness: Brightness.light,
   ));
   final store = await Store.open();
+  await ImageCache2.init(); // список закэшированных картинок — до первого кадра
   // оповещения и сводки, когда приложение открыто
   Store.onEvents = (s, events) async {
     await Notifier.handleEvents(s, events);

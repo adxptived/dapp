@@ -21,7 +21,20 @@ class ImageCache2 {
   static bool _dirFailed = false;
   static int _active = 0;
   static final _queue = Queue<Completer<void>>();
-  static const _maxMem = 400;
+  static const _maxMem = 150;
+  static final _onDisk = <String>{}; // имена уже скачанных файлов — без проверок диска на каждую картинку
+  static Future<void>? _init;
+
+  /// Один раз при запуске: папка кэша и список скачанного.
+  static Future<void> init() => _init ??= () async {
+        final d = await _cacheDir();
+        if (d == null) return;
+        try {
+          await for (final f in d.list()) {
+            if (f is File) _onDisk.add(f.uri.pathSegments.last);
+          }
+        } catch (_) {}
+      }();
   static const _maxParallel = 6;
 
   static Future<Directory?> _cacheDir() async {
@@ -77,10 +90,12 @@ class ImageCache2 {
   }
 
   static Future<Uint8List?> _load(String url) async {
-    final dir = await _cacheDir();
-    final file = dir == null ? null : File('${dir.path}/${_name(url)}');
+    await init();
+    final dir = _dir;
+    final name = _name(url);
+    final file = dir == null ? null : File('${dir.path}/$name');
     try {
-      if (file != null && await file.exists()) {
+      if (file != null && _onDisk.contains(name)) {
         final b = await file.readAsBytes();
         if (b.isNotEmpty) {
           _remember(url, b);
@@ -101,6 +116,7 @@ class ImageCache2 {
       if (file != null) {
         try {
           await file.writeAsBytes(b, flush: false);
+          _onDisk.add(name);
         } catch (_) {}
       }
       return b;
@@ -118,7 +134,8 @@ class ImageCache2 {
     var n = 0;
     // по одной: фоновая докачка занимает максимум один поток, видимые картинки грузятся без очереди
     for (final u in urls) {
-      if (dir != null && await File('${dir.path}/${_name(u)}').exists()) {
+      await init();
+      if (dir != null && _onDisk.contains(_name(u))) {
         n++;
         continue;
       }
@@ -144,6 +161,7 @@ class ImageCache2 {
     _mem.clear();
     _failed.clear();
     final dir = await _cacheDir();
+    _onDisk.clear();
     if (dir != null && await dir.exists()) {
       await dir.delete(recursive: true);
       await dir.create(recursive: true);
@@ -209,7 +227,7 @@ class NetImage extends StatelessWidget {
         if (sync) return child;
         return Stack(fit: StackFit.passthrough, children: [
           if (frame == null) ph,
-          AnimatedOpacity(opacity: frame == null ? 0 : 1, duration: const Duration(milliseconds: 220), child: child),
+          AnimatedOpacity(opacity: frame == null ? 0 : 1, duration: const Duration(milliseconds: 140), child: child),
         ]);
       },
     );

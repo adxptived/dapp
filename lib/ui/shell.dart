@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../data/refdata.dart';
 import '../data/store.dart';
+import '../logic/ranks.dart';
+import '../logic/stats.dart';
 import '../services/updater.dart';
 import 'screens/analytics.dart';
 import 'screens/home.dart';
@@ -41,6 +43,7 @@ class ShellState extends State<Shell> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final store = context.read<Store>();
       store.autoBackup();
+      _warmImages(store);
       if (store.players.isNotEmpty) store.refreshAll();
       // иконки героев — один раз на диск, дальше из кэша
       Future.delayed(const Duration(seconds: 4), () async {
@@ -51,6 +54,31 @@ class ShellState extends State<Shell> with WidgetsBindingObserver {
         await Updater.checkAndPrompt(context, store, silent: true);
       }
     });
+  }
+
+  /// Заранее раскодировать то, что видно сразу: аватарки, медали и героев последних игр.
+  void _warmImages(Store store) {
+    final urls = <String>{};
+    for (final p in store.players) {
+      if (p.avatar != null) urls.add(p.avatar!);
+      final r = rankIconUrl(p.rankTier);
+      if (r != null) urls.add(r);
+      final st = rankStarsUrl(p.rankTier);
+      if (st != null) urls.add(st);
+    }
+    for (final (_, m) in store.feed(limit: 60)) {
+      final h = RefData.I.hero(m.heroId);
+      if (h != null) urls.add(RefData.I.lowData ? h.icon : h.image);
+    }
+    for (final p in store.players) {
+      for (final h in heroStats(store.matchesOf(p), limit: 10)) {
+        final hi = RefData.I.hero(h.heroId);
+        if (hi != null) urls.add(RefData.I.lowData ? hi.icon : hi.image);
+      }
+    }
+    for (final u in urls) {
+      precacheImage(CachedNetImage(u), context, onError: (_, __) {});
+    }
   }
 
   @override
@@ -64,7 +92,8 @@ class ShellState extends State<Shell> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed && !Shell.skipStartup) {
       final store = context.read<Store>();
       store.reload().then((_) {
-        if (store.players.isNotEmpty) store.refreshAll();
+        _warmImages(store);
+      if (store.players.isNotEmpty) store.refreshAll();
       });
     }
   }
