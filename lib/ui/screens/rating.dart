@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../data/store.dart';
 import '../../logic/stats.dart';
 import '../common.dart';
+import '../fx.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'compare.dart';
