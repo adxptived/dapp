@@ -21,23 +21,18 @@ jobs:
           find . -type f -not -path './.dart_tool/*' | sort > /tmp/out/files.txt
           flutter pub add http path_provider provider google_fonts url_launcher package_info_plus open_filex file_picker flutter_local_notifications workmanager > /tmp/out/pubadd.txt 2>&1 || true
           cat pubspec.yaml >> /tmp/out/pubadd.txt
+          set +e
           PC=$HOME/.pub-cache/hosted/pub.dev
-          ls $PC > /tmp/out/pkgs.txt
           {
-          echo "=== FLN"; grep -n "Future<.*> \(initialize\|show\|cancel\)\b\|^  Future<bool?> initialize\|required\|^    [A-Za-z].*,$" $PC/flutter_local_notifications-*/lib/src/flutter_local_notifications_plugin.dart | head -120
-          echo "=== FLN android requestNotificationsPermission"; grep -rn "requestNotificationsPermission\|class AndroidNotificationDetails\|AndroidNotificationDetails(" $PC/flutter_local_notifications-*/lib/src/platform_flutter_local_notifications.dart $PC/flutter_local_notifications-*/lib/src/platform_specifics/android/notification_details.dart | head -20
-          sed -n '/AndroidNotificationDetails(/,/});/p' $PC/flutter_local_notifications-*/lib/src/platform_specifics/android/notification_details.dart | head -60
-          echo "=== FLN android setup README"; grep -n -i -A3 "desugar\|compileSdk" $PC/flutter_local_notifications-*/README.md | head -60
-          echo "=== WM"; grep -n "Future<.*>\|void executeTask\|static" $PC/workmanager-*/lib/src/workmanager*.dart $PC/workmanager/lib/*.dart 2>/dev/null | head -60
-          ls $PC | grep -i workmanager
-          for d in $PC/workmanager*; do echo "--$d"; ls $d/lib $d/lib/src 2>/dev/null; done
-          grep -rn "registerPeriodicTask\|Future<void> initialize\|executeTask" $PC/workmanager*/lib | head -20
-          echo "=== FP"; grep -rn "Future<String?> saveFile\|Future<FilePickerResult?> pickFiles" -A16 $PC/file_picker-*/lib/src/file_picker.dart | head -60
-          echo "=== OF"; grep -rn "static Future<OpenResult> open" -A6 $PC/open_filex-*/lib/src/*.dart | head
-          echo "=== GF"; grep -n "static TextTheme manropeTextTheme\|static TextStyle manrope(" $PC/google_fonts-*/lib/src/google_fonts_parts/*.dart | head -4
-          echo "=== PIP"; grep -n "buildNumber\|static Future<PackageInfo> fromPlatform" $PC/package_info_plus-*/lib/package_info_plus.dart | head
-          echo "=== UL"; grep -n "^Future<bool> launchUrl" -A6 $PC/url_launcher-*/lib/src/url_launcher_uri.dart | head
-          } > /tmp/out/apis.txt 2>&1
+          echo "=== WM"; sed -n '165,380p' $PC/workmanager-*/lib/src/workmanager_impl.dart
+          echo "=== FP"; ls $PC | grep file_picker; grep -rn "saveFile\|Future<FilePickerResult?> pickFiles" $PC/file_picker-*/lib/src/*.dart | head; grep -rn "Future<String?> saveFile" -A16 $PC/file_picker-*/lib/src/ | head -40; grep -rn "Future<FilePickerResult?> pickFiles" -A20 $PC/file_picker-*/lib/src/file_picker.dart | head -30
+          echo "=== OF"; grep -rn "static Future<OpenResult> open" -A8 $PC/open_filex-*/lib/ | head -20
+          echo "=== GF"; grep -rln "manropeTextTheme" $PC/google_fonts-*/lib | head -3; grep -rn "static TextTheme manropeTextTheme\|TextStyle manrope(" $PC/google_fonts-*/lib | head -4
+          echo "=== PIP"; grep -rn "buildNumber\|Future<PackageInfo> fromPlatform" $PC/package_info_plus-*/lib/package_info_plus.dart | head
+          echo "=== UL"; grep -rn "Future<bool> launchUrl" -A6 $PC/url_launcher-*/lib/src/ | head -12
+          echo "=== PP"; ls $PC | grep -E "^(http|path_provider|provider)-"
+          } > /tmp/out/apis2.txt 2>&1
+          true
       - if: always()
         run: |
           cd /tmp/out
