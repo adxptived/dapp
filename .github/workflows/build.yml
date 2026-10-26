@@ -72,7 +72,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
-          name: Dota Party ${{ steps.ver.outputs.name }}
+          name: Dota Manager ${{ steps.ver.outputs.name }}
           body_path: notes.md
           files: dapp-${{ steps.ver.outputs.name }}.apk
           make_latest: true

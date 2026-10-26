@@ -51,8 +51,22 @@ def patch_manifest() -> None:
     block = "".join(f'    <uses-permission android:name="{p}"/>\n' for p in perms if p not in s)
     s = s.replace('<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
                   '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n' + block, 1)
-    s = re.sub(r'android:label="[^"]*"', 'android:label="Dota Party"', s, count=1)
+    s = re.sub(r'android:label="[^"]*"', 'android:label="Dota Manager"', s, count=1)
     path.write_text(s)
+
+
+def dark_launch() -> None:
+    """Тёмный фон заставки вместо белой вспышки при запуске."""
+    res = app / "src" / "main" / "res"
+    for f in res.glob("drawable*/launch_background.xml"):
+        t = f.read_text()
+        t = t.replace("@android:color/white", "#FF110F16").replace("?android:colorBackground", "#FF110F16")
+        f.write_text(t)
+    for f in res.glob("values*/styles.xml"):
+        t = f.read_text()
+        t = t.replace('<item name="android:windowBackground">?android:colorBackground</item>',
+                      '<item name="android:windowBackground">#FF110F16</item>')
+        f.write_text(t)
 
 
 def copy_icons() -> None:
@@ -68,7 +82,7 @@ def patch_ios() -> None:
     if not plist.exists():
         return
     s = plist.read_text()
-    s = re.sub(r"(<key>CFBundleDisplayName</key>\s*<string>)[^<]*(</string>)", r"\1Dota Party\2", s)
+    s = re.sub(r"(<key>CFBundleDisplayName</key>\s*<string>)[^<]*(</string>)", r"\1Dota Manager\2", s)
     plist.write_text(s)
     icon_dir = root / "ios" / "Runner" / "Assets.xcassets" / "AppIcon.appiconset"
     if icon_dir.exists():
@@ -88,5 +102,6 @@ if __name__ == "__main__":
         patch_gradle()
         patch_manifest()
         copy_icons()
+        dark_launch()
     patch_ios()
     sys.exit(0)

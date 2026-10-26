@@ -40,7 +40,7 @@ class AppCard extends StatelessWidget {
                 ? const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF1B1B1B), C.surface],
+                    colors: [Color(0xFF221F2B), C.surface],
                   )
                 : null),
         borderRadius: BorderRadius.circular(radius),
@@ -928,6 +928,18 @@ class PageScaffold extends StatelessWidget {
     );
     return Scaffold(
       body: Stack(children: [
+        const Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [C.glow, Color(0xFF1A1526), C.bg, C.bg],
+                stops: [0, 0.22, 0.5, 1],
+              ),
+            ),
+          ),
+        ),
         Positioned.fill(
           child: onRefresh == null
               ? list
@@ -952,7 +964,7 @@ class PageScaffold extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [C.bg.withValues(alpha: 0.92), C.bg.withValues(alpha: 0.55)],
+                    colors: [C.glow.withValues(alpha: 0.55), C.glow.withValues(alpha: 0.15)],
                   ),
                 ),
                 child: SizedBox(

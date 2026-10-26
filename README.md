@@ -1,6 +1,6 @@
-# 🏆 Dota Party
+# 🏆 Dota Manager
 
-Android/iOS-приложение для пати Dota 2: рейтинг, оценка MMR и статистика ранкед-игр. Перенос всех функций
+Android/iOS-менеджер Dota 2: рейтинг игроков, оценка MMR и статистика ранкед-игр. Перенос всех функций
 Telegram-бота [dota-party-tracker](https://github.com/adxptived/dota-party-tracker) в приложение. Данные — из
 [OpenDota](https://www.opendota.com/) (и [Stratz](https://stratz.com/api) по ключу). Сервер не нужен: всё
 считается и хранится на телефоне.

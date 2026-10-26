@@ -82,16 +82,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       need++;
     }
     final msg = games == 0
-        ? 'Сыграйте пару ранкед-игр — здесь появится винрейт пати.'
+        ? 'Сыграйте пару ранкед-игр — здесь появится общий винрейт.'
         : wr >= 0.55
-            ? 'Отлично! Винрейт пати выше 55%. Так держать.'
+            ? 'Отлично! Винрейт выше 55%. Так держать.'
             : 'Ещё $need ${plural(need, 'победа', 'победы', 'побед').split(' ').last} подряд до 55%. Каждая катка на счету.';
     return AppCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Винрейт пати', style: T.sub),
+              Text('Общий винрейт', style: T.sub),
               Text('Цель: 55% · ${periodLong[period]}', style: T.small),
             ]),
           ),
@@ -184,7 +184,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   Widget _grid(BuildContext context) {
     final items = [
-      (Icons.compare_arrows_rounded, 'Сравнение', 'сила в пати', () => push(context, const CompareScreen())),
+      (Icons.compare_arrows_rounded, 'Сравнение', 'сила игроков', () => push(context, const CompareScreen())),
       (Icons.people_alt_outlined, 'Вместе', 'пары и совместные', () => push(context, const TogetherScreen())),
       (Icons.local_fire_department_outlined, 'Герои', 'любимые и лучшие', () => push(context, const HeroesScreen())),
       (Icons.sports_kabaddi_outlined, 'Соперники', 'тяжёлые и удобные', () => push(context, const MatchupsScreen())),

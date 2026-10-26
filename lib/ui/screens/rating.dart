@@ -110,7 +110,7 @@ class _RatingScreenState extends State<RatingScreen> {
         Row(children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Обзор пати', style: T.sub),
+              Text('Обзор', style: T.sub),
               Text(periodLong[p]!, style: T.small),
             ]),
           ),
@@ -119,7 +119,7 @@ class _RatingScreenState extends State<RatingScreen> {
           CircleBtn(Icons.ios_share_rounded, size: 42, onTap: () => _share(store, p, ss)),
         ]),
         const SizedBox(height: 14),
-        KvTable(headLeft: 'Метрика', headRight: 'Игры пати', rows: [
+        KvTable(headLeft: 'Метрика', headRight: 'Все игры', rows: [
           ('Текущее', valueText('$games')),
           ('Победы', valueText('$wins–${games - wins}', color: C.lime)),
           ('Винрейт', valueText(pct(wr), color: wr >= 0.5 ? C.lime : C.red)),
@@ -221,13 +221,13 @@ class _RatingScreenState extends State<RatingScreen> {
   }
 
   void _share(Store store, String p, List<PlayerSummary> ss) {
-    final b = StringBuffer('🏆 Рейтинг пати ${periodLong[p]}\n');
+    final b = StringBuffer('🏆 Рейтинг ${periodLong[p]}\n');
     for (var i = 0; i < ss.length; i++) {
       final s = ss[i];
       b.write('${i + 1}. ${s.name} — ${s.currentMmr == null ? '' : '≈${s.currentMmr} '}'
           '(${signed(s.periodDelta)}) · ${s.agg.wins}–${s.agg.losses}\n');
     }
-    final uri = Uri.parse('https://t.me/share/url?url=${Uri.encodeComponent('Dota Party')}&text=${Uri.encodeComponent(b.toString())}');
+    final uri = Uri.parse('https://t.me/share/url?url=${Uri.encodeComponent('Dota Manager')}&text=${Uri.encodeComponent(b.toString())}');
     launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }

@@ -52,7 +52,7 @@ class _GoScreenState extends State<GoScreen> {
     final store = context.watch<Store>();
     final yes = going.values.where((v) => v == 'yes').length;
     return PageScaffold(
-      title: 'Позвать пати',
+      title: 'Позвать на катку',
       children: [
         TextField(controller: ctl, decoration: const InputDecoration(hintText: 'Текст приглашения'), onChanged: (_) => setState(() {})),
         const SizedBox(height: 12),

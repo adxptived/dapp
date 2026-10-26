@@ -62,7 +62,7 @@ class Notifier {
             importance: channel == 'matches' ? Importance.high : Importance.defaultImportance,
             priority: channel == 'matches' ? Priority.high : Priority.defaultPriority,
             styleInformation: BigTextStyleInformation(body),
-            color: const Color(0xFFD6F84C),
+            color: const Color(0xFFA48BF4),
           ),
           iOS: const DarwinNotificationDetails(),
         ),
@@ -93,7 +93,7 @@ class Notifier {
         lines.add('${e.player.name} — ${RefData.I.heroName(pm.heroId)} ${pm.kills}/${pm.deaths}/${pm.assists}'
             ' · ${matchMmrDelta(pm, s.mmrStep) > 0 ? '+' : ''}${matchMmrDelta(pm, s.mmrStep)}${mmr != null ? ' (≈$mmr)' : ''}');
       }
-      final who = group.length > 1 ? 'Пати' : group.first.player.name;
+      final who = group.length > 1 ? 'Вместе' : group.first.player.name;
       if (s.notifyMatches) {
         await show('matches', m.matchId % 1000000000, '${won ? '✅ Победа' : '❌ Поражение'} · $who',
             '${lines.join('\n')}\n⏱ ${(m.duration ?? 0) ~/ 60} мин');

@@ -98,7 +98,7 @@ class _TogetherScreenState extends State<TogetherScreen> {
             ),
           ),
         const SizedBox(height: 8),
-        Text('Совместная игра — двое из пати на одной стороне и не соло в лобби.', style: T.tiny),
+        Text('Совместная игра — двое ваших игроков на одной стороне и не соло в лобби.', style: T.tiny),
       ],
     );
   }

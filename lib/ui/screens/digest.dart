@@ -101,7 +101,7 @@ class _DigestScreenState extends State<DigestScreen> {
 
   void _share(String text) {
     launchUrl(
-      Uri.parse('https://t.me/share/url?url=${Uri.encodeComponent('Dota Party')}&text=${Uri.encodeComponent(text)}'),
+      Uri.parse('https://t.me/share/url?url=${Uri.encodeComponent('Dota Manager')}&text=${Uri.encodeComponent(text)}'),
       mode: LaunchMode.externalApplication,
     );
   }
@@ -111,7 +111,7 @@ class _DigestScreenState extends State<DigestScreen> {
 String buildDigestText(Store store, String period) {
   final ss = store.summaries(period).where((s) => s.agg.games > 0).toList()
     ..sort((a, b) => b.periodDelta.compareTo(a.periodDelta));
-  if (ss.isEmpty) return 'Dota Party: ${periodLong[period]} никто не играл 😴';
+  if (ss.isEmpty) return 'Dota Manager: ${periodLong[period]} никто не играл 😴';
   final b = StringBuffer('📊 Итоги ${periodLong[period]}\n');
   for (var i = 0; i < ss.length; i++) {
     final s = ss[i];

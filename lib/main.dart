@@ -12,6 +12,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
+    systemNavigationBarDividerColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
     systemNavigationBarColor: C.bg,
     systemNavigationBarIconBrightness: Brightness.light,
@@ -34,7 +35,7 @@ class DotaPartyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dota Party',
+      title: 'Dota Manager',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       darkTheme: buildTheme(),

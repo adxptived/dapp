@@ -31,7 +31,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     final store = context.watch<Store>();
     final p = store.byId(widget.accountId);
     if (p == null) {
-      return const PageScaffold(title: 'Игрок', children: [EmptyState(title: 'Игрок удалён из пати')]);
+      return const PageScaffold(title: 'Игрок', children: [EmptyState(title: 'Игрок удалён')]);
     }
     final per = period ?? store.settings.defaultPeriod;
     final s = store.summary(p, per);
@@ -205,7 +205,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     return AppCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Expanded(child: Text('Сила в пати', style: T.sub)),
+          Expanded(child: Text('Сила среди игроков', style: T.sub)),
           Text('#${cmp.powerRank[s.name]} из $size', style: T.title.copyWith(color: C.lime)),
         ]),
         const SizedBox(height: 10),
@@ -232,7 +232,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         const SizedBox(height: 12),
         KvTable(rows: [
           ('Соло', valueText(wl(sp['solo']!))),
-          ('С пати', valueText(wl(sp['party']!))),
+          ('В группе', valueText(wl(sp['party']!))),
           if (sp['unknown']!.$1 > 0) ('Неизвестно', valueText(wl(sp['unknown']!))),
           ('В победах', valueText('KDA ${avgKda(wins)} · смертей ${avgD(wins)}')),
           ('В поражениях', valueText('KDA ${avgKda(losses)} · смертей ${avgD(losses)}')),
@@ -420,7 +420,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
             title: const Text('Переименовать'),
             onTap: () async {
               Navigator.pop(c);
-              final v = await prompt(context, 'Ник в пати', initial: p.name);
+              final v = await prompt(context, 'Имя игрока', initial: p.name);
               if (v == null) return;
               try {
                 await store.renamePlayer(p, v);
@@ -445,7 +445,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
             ),
           ListTile(
             leading: const Icon(Icons.delete_outline_rounded, color: C.red),
-            title: const Text('Удалить из пати', style: TextStyle(color: C.red)),
+            title: const Text('Удалить игрока', style: TextStyle(color: C.red)),
             onTap: () async {
               Navigator.pop(c);
               if (await confirm(context, 'Удалить ${p.name}?', 'Игрок и его сохранённые матчи будут удалены.', ok: 'Удалить')) {

@@ -45,7 +45,7 @@ class _CompareScreenState extends State<CompareScreen> {
         else ...[
           AppCard(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Сила в пати', style: T.sub),
+              Text('Сила среди игроков', style: T.sub),
               Text('среднее места по перфу, винрейту, KDA и GPM', style: T.small),
               const SizedBox(height: 12),
               for (final s in ss)

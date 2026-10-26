@@ -100,7 +100,7 @@ class _SearchScreenState extends State<SearchScreen> {
         if (error != null) Text(error!, style: T.small.copyWith(color: C.red)),
         if (result != null) _card(context, store, result!),
         if (result == null && error == null && !busy) ...[
-          const SectionTitle('Пати'),
+          const SectionTitle('Ваши игроки'),
           for (final p in store.players)
             PlayerLine(
               player: p,
@@ -162,7 +162,7 @@ class _SearchScreenState extends State<SearchScreen> {
           if (inParty != null)
             LimeButton('Открыть карточку', onTap: () => openPlayer(context, inParty))
           else
-            LimeButton('Добавить в пати',
+            LimeButton('Добавить игрока',
                 icon: Icons.add_rounded,
                 onTap: () => push(context, AddPlayerScreen(initialId: '${r.id}', initialName: name))),
         ]),

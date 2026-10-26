@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class C {
-  static const bg = Color(0xFF0B0B0B);
-  static const surface = Color(0xFF161616);
-  static const surface2 = Color(0xFF1E1E1E);
-  static const surface3 = Color(0xFF262626);
-  static const stroke = Color(0xFF2A2A2A);
-  static const lime = Color(0xFFD6F84C);
-  static const limeDim = Color(0xFF8FA62E);
-  static const onLime = Color(0xFF0B0B0B);
+  static const bg = Color(0xFF110F16);
+  static const surface = Color(0xFF1D1A24);
+  static const surface2 = Color(0xFF27242F);
+  static const surface3 = Color(0xFF322E3B);
+  static const stroke = Color(0xFF34303F);
+  static const lime = Color(0xFFA48BF4); // акцент: фиолетовый (чуть темнее сиреневого)
+  static const limeDim = Color(0xFF6E5BB0);
+  static const onLime = Color(0xFF16112A);
   static const text = Color(0xFFF4F4F4);
-  static const muted = Color(0xFF8D8D8D);
-  static const faint = Color(0xFF4A4A4A);
-  static const red = Color(0xFFFF6B5B);
+  static const muted = Color(0xFF8E89A0);
+  static const faint = Color(0xFF4A4558);
+  static const red = Color(0xFFFF6B7A);
+  static const win = Color(0xFF7EE0A1); // победа на графиках/плашках
+  static const glow = Color(0xFF3B2D6B); // фиолетовое свечение сверху
   static const gold = Color(0xFFFFC94D);
   static const silver = Color(0xFFC9D1D9);
   static const bronze = Color(0xFFE09A5B);
@@ -22,7 +24,7 @@ class C {
 
   /// Цвета игроков на графиках.
   static const series = [
-    Color(0xFFD6F84C),
+    Color(0xFFA48BF4),
     Color(0xFF6FD3FF),
     Color(0xFFFF8A65),
     Color(0xFFB39DFF),

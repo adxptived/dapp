@@ -106,7 +106,7 @@ class _MatchScreenState extends State<MatchScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(color: partyWon ? C.lime : C.red, borderRadius: BorderRadius.circular(20)),
-              child: Text(partyWon ? 'ПОБЕДА ПАТИ' : 'ПОРАЖЕНИЕ ПАТИ',
+              child: Text(partyWon ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ',
                   style: T.tiny.copyWith(color: C.onLime, fontWeight: FontWeight.w800, letterSpacing: 1)),
             ),
           const SizedBox(height: 12),

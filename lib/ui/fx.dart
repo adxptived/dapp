@@ -71,7 +71,7 @@ class Glass extends StatelessWidget {
     this.padding = EdgeInsets.zero,
     this.blur = 22,
     this.tint = 0.55,
-    this.color = const Color(0xFF151515),
+    this.color = const Color(0xFF1D1A24),
   });
 
   @override

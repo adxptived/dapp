@@ -222,7 +222,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ]),
 
         // --- пати ---
-        SectionTitle('Пати', trailing: Pressable(onTap: () => openAdd(context), child: Text('+ добавить', style: T.limeS))),
+        SectionTitle('Игроки', trailing: Pressable(onTap: () => openAdd(context), child: Text('+ добавить', style: T.limeS))),
         AppCard(
           padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
           child: store.players.isEmpty
@@ -309,7 +309,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Center(
           child: Pressable(
             onTap: () => launchUrl(Uri.parse('https://github.com/${s.updateRepo}'), mode: LaunchMode.externalApplication),
-            child: Text('Dota Party $version · github.com/${s.updateRepo}', style: T.tiny),
+            child: Text('Dota Manager $version · github.com/${s.updateRepo}', style: T.tiny),
           ),
         ),
         const SizedBox(height: 4),
@@ -339,7 +339,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 4),
             if (me != null) RankBadge(me.rankTier, leaderboard: me.leaderboardRank, size: 20),
             const SizedBox(height: 6),
-            Text('${store.players.length} в пати · $total матчей', style: T.small),
+            Text('${store.players.length} игроков · $total матчей', style: T.small),
           ]),
         ),
         Container(
@@ -495,7 +495,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final bytes = Uint8List.fromList(utf8.encode(jsonEncode(store.exportJson())));
       final d = DateTime.now();
-      final name = 'dota-party-${d.year}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}.json';
+      final name = 'dota-manager-${d.year}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}.json';
       final r = await FilePicker.saveFile(dialogTitle: 'Сохранить копию', fileName: name, bytes: bytes);
       if (context.mounted) toast(context, r == null ? 'Отменено' : 'Сохранено');
     } catch (e) {

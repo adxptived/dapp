@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _quick(context),
           const SizedBox(height: 14),
           _months(context, store),
-          SectionTitle('Последние матчи', trailing: Text('${store.players.length} в пати', style: T.small)),
+          SectionTitle('Последние матчи', trailing: Text('${store.players.length} игроков', style: T.small)),
           ..._feed(context, store),
         ],
       ],
@@ -92,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF2F3320), Color(0xFF121210)],
+                colors: [Color(0xFF3B2D6B), Color(0xFF15111F)],
               ),
             ),
           ),
@@ -237,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (meDelta != null)
               bigRow(meDelta, (v) => signed(v), 'MMR', 'у вас (${me!.name})', subColor: deltaColor(meDelta))
             else
-              bigRow(store.players.length, (v) => '${v.round()}', 'в пати', 'игроков'),
+              bigRow(store.players.length, (v) => '${v.round()}', 'игроков', 'отслеживается'),
           ]),
         ),
         const SizedBox(width: 10),
@@ -326,7 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
     return Column(children: [
       Row(children: [
-        tile(Icons.campaign_rounded, 'Позвать пати', 'сбор на катку', () => push(context, const GoScreen()), lime: true),
+        tile(Icons.campaign_rounded, 'Позвать на катку', 'собрать стак', () => push(context, const GoScreen()), lime: true),
         const SizedBox(width: 10),
         tile(Icons.emoji_events_outlined, 'Соревнование', 'номинации и сезон', () => push(context, const ContestScreen())),
       ]),
@@ -334,7 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
       Row(children: [
         tile(Icons.workspace_premium_outlined, 'Рекорды', 'лучшие игры', () => push(context, const RecordsScreen())),
         const SizedBox(width: 10),
-        tile(Icons.person_add_alt_1_rounded, 'Добавить', 'игрока в пати', () => openAdd(context)),
+        tile(Icons.person_add_alt_1_rounded, 'Добавить', 'нового игрока', () => openAdd(context)),
       ]),
     ]);
   }
@@ -365,7 +365,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Игры пати по месяцам', style: T.sub),
+              Text('Игры по месяцам', style: T.sub),
               Text('в этом месяце ${counts[5].toInt()}', style: T.small),
             ]),
           ),

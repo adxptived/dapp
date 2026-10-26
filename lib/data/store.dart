@@ -249,7 +249,7 @@ class Store extends ChangeNotifier {
   Future<Player> addPlayer(String input, {String? name, int? mmr, void Function(String)? onProgress}) async {
     if (players.length >= 32) throw ApiError('Слишком много игроков (максимум 32).');
     final id = await resolveAccount(input);
-    if (byId(id) != null) throw ApiError('Этот игрок уже в пати: ${byId(id)!.name}');
+    if (byId(id) != null) throw ApiError('Этот игрок уже добавлен: ${byId(id)!.name}');
     onProgress?.call('Профиль…');
     final prof = await od.profile(id);
     final profile = (prof['profile'] as Map?) ?? {};
@@ -712,7 +712,7 @@ class Store extends ChangeNotifier {
       };
 
   Future<void> importJson(Map<String, dynamic> j) async {
-    if (j['players'] is! List) throw ApiError('Это не резервная копия Dota Party');
+    if (j['players'] is! List) throw ApiError('Это не резервная копия Dota Manager');
     _applyState(j);
     applyKeys();
     _matches.clear();

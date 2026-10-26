@@ -105,7 +105,7 @@ class NoPlayers extends StatelessWidget {
   const NoPlayers({super.key});
   @override
   Widget build(BuildContext context) => EmptyState(
-        title: 'Пати пока пустая',
+        title: 'Игроков пока нет',
         text:
             'Добавьте игроков по ссылке Dotabuff / OpenDota / Stratz / Steam или по ID. Важно: в Dota 2 должна быть включена опция «Общедоступная история матчей».',
         action: LimeButton('Добавить игрока', icon: Icons.add_rounded, onTap: () => openAdd(context)),

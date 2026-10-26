@@ -37,7 +37,7 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
         if (mounted) setState(() => status = s);
       });
       if (!mounted) return;
-      toast(context, '${p.name} в пати · ${store.matchesOf(p).length} ранкед-игр');
+      toast(context, '${p.name} добавлен · ${store.matchesOf(p).length} ранкед-игр');
       Navigator.of(context).pop();
     } catch (e) {
       setState(() => error = e.toString().replaceFirst('Exception: ', ''));
@@ -71,7 +71,7 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            TextField(controller: nameCtl, decoration: const InputDecoration(hintText: 'Ник в пати (необязательно)')),
+            TextField(controller: nameCtl, decoration: const InputDecoration(hintText: 'Имя (необязательно)')),
             const SizedBox(height: 12),
             TextField(
               controller: mmrCtl,
@@ -88,7 +88,7 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(error!, style: T.small.copyWith(color: C.red)),
           ),
-        LimeButton(busy ? (status ?? 'Добавляю…') : 'Добавить в пати', busy: busy, icon: Icons.add_rounded, onTap: _add),
+        LimeButton(busy ? (status ?? 'Добавляю…') : 'Добавить игрока', busy: busy, icon: Icons.add_rounded, onTap: _add),
         if (busy && status != null) ...[
           const SizedBox(height: 10),
           Center(child: Text(status!, style: T.small)),

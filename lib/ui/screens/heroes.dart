@@ -58,7 +58,7 @@ class _HeroesScreenState extends State<HeroesScreen> {
           DropChip<int>(
             label: 'Кто',
             value: who,
-            options: {0: 'Вся пати', for (final p in store.players) p.accountId: p.name},
+            options: {0: 'Все игроки', for (final p in store.players) p.accountId: p.name},
             onChanged: (v) => setState(() => who = v),
           ),
         const SizedBox(height: 12),
@@ -104,7 +104,7 @@ class _HeroesScreenState extends State<HeroesScreen> {
     final hs = heroStats(all, limit: 20);
     if (hs.isEmpty) return [Text('Нет игр за период', style: T.small)];
     return [
-      Text('Любимые герои пати ${periodLong[period]}', style: T.small),
+      Text('Любимые герои ${periodLong[period]}', style: T.small),
       const SizedBox(height: 8),
       for (final h in hs) _heroRow(h, hs.first.games),
     ];
@@ -142,7 +142,7 @@ class _HeroesScreenState extends State<HeroesScreen> {
         Expanded(child: Text(h.localized, style: T.title.copyWith(fontSize: 20))),
       ]),
       const SizedBox(height: 12),
-      if (rows.isEmpty) Text('Никто из пати не играл на ${h.localized} ${periodLong[period]}', style: T.small),
+      if (rows.isEmpty) Text('Никто из ваших игроков не играл на ${h.localized} ${periodLong[period]}', style: T.small),
       for (final r in rows) _heroRow(r.$2, rows.first.$2.games, sub: r.$1.name, lead: Avatar(r.$1.avatar, size: 34, fallback: r.$1.name)),
     ];
   }

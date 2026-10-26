@@ -34,7 +34,7 @@ Future<void> runBackgroundPoll() async {
     try {
       final u = await Updater.check(store);
       if (u != null) {
-        await Notifier.show('updates', 3, 'Доступно обновление ${u.version}', 'Откройте Dota Party, чтобы установить.');
+        await Notifier.show('updates', 3, 'Доступно обновление ${u.version}', 'Откройте Dota Manager, чтобы установить.');
       }
     } catch (_) {}
   }

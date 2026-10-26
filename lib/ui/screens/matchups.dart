@@ -41,7 +41,7 @@ class _MatchupsScreenState extends State<MatchupsScreen> {
         DropChip<int>(
           label: 'Кто',
           value: who,
-          options: {0: 'Вся пати', for (final x in store.players) x.accountId: x.name},
+          options: {0: 'Все игроки', for (final x in store.players) x.accountId: x.name},
           onChanged: (v) => setState(() => who = v),
         ),
         const SizedBox(height: 12),
