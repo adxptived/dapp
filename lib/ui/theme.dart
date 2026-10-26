@@ -37,7 +37,11 @@ class C {
 const double rCard = 28;
 const double rInner = 16;
 
+/// В тестах шрифт подгружается из файла, без сети.
+String? testFontFamily;
+
 TextStyle _base() {
+  if (testFontFamily != null) return TextStyle(fontFamily: testFontFamily);
   try {
     return GoogleFonts.manrope();
   } catch (_) {
@@ -60,10 +64,12 @@ class T {
 
 ThemeData buildTheme() {
   final base = ThemeData(brightness: Brightness.dark, useMaterial3: true);
-  String? family;
-  try {
-    family = GoogleFonts.manrope().fontFamily;
-  } catch (_) {}
+  String? family = testFontFamily;
+  if (family == null) {
+    try {
+      family = GoogleFonts.manrope().fontFamily;
+    } catch (_) {}
+  }
   final tt = base.textTheme.apply(fontFamily: family);
   return base.copyWith(
     scaffoldBackgroundColor: C.bg,

@@ -39,6 +39,23 @@ class Store extends ChangeNotifier {
   int lastFullRefresh = 0;
   String progress = '';
 
+  /// Хранилище в памяти для тестов и скриншотов (файлы — во временной папке).
+  @visibleForTesting
+  static Store memory(String tmpDir) {
+    final s = Store();
+    s.dir = tmpDir;
+    s.od = OpenDota();
+    s.stratz = Stratz('');
+    s.loaded = true;
+    return s;
+  }
+
+  @visibleForTesting
+  void seed(Player p, List<M> ms) {
+    players.add(p);
+    _matches[p.accountId] = [...ms]..sort((a, b) => a.startTime.compareTo(b.startTime));
+  }
+
   static Future<Store> open() async {
     final s = Store();
     await s.init();

@@ -13,6 +13,7 @@ import 'theme.dart';
 class Shell extends StatefulWidget {
   const Shell({super.key});
   static final GlobalKey<ShellState> shellKey = GlobalKey<ShellState>();
+  static bool skipStartup = false; // тесты/скриншоты: без сети при запуске
   @override
   State<Shell> createState() => ShellState();
 }
@@ -33,6 +34,7 @@ class ShellState extends State<Shell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (Shell.skipStartup) return;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final store = context.read<Store>();
       store.autoBackup();
@@ -51,7 +53,7 @@ class ShellState extends State<Shell> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && !Shell.skipStartup) {
       final store = context.read<Store>();
       store.reload().then((_) {
         if (store.players.isNotEmpty) store.refreshAll();

@@ -64,6 +64,12 @@ class RefData {
     return null;
   }
 
+  void seedForTests(Map<int, (String, String)> hs) {
+    heroes.clear();
+    hs.forEach((id, v) => heroes[id] = HeroInfo(id, v.$1, v.$2));
+    updated = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  }
+
   Future<File> _file(String dir) async => File('$dir/refdata.json');
 
   Future<void> load(String dir) async {

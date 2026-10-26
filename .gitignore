@@ -11,3 +11,6 @@ ios/Pods/
 ios/.symlinks/
 ios/Flutter/Generated.xcconfig
 ios/Flutter/flutter_export_environment.sh
+test/fonts/
+test/shots/
+test/failures/

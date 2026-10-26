@@ -44,7 +44,7 @@ jobs:
           mkdir -p logs
           flutter --version | tee logs/version.log
           flutter create --org com.adxptived --project-name dapp --platforms android,ios . 2>&1 | tee logs/create.log
-          rm -rf test
+          rm -f test/widget_test.dart
           python3 tool/patch_platforms.py 2>&1 | tee logs/patch.log
 
       - name: Зависимости
@@ -57,7 +57,7 @@ jobs:
       - name: Сборка APK
         run: |
           set -o pipefail
-          flutter build apk --release --build-name=${{ steps.ver.outputs.name }} --build-number=${{ steps.ver.outputs.code }} 2>&1 | tee logs/build.log
+          flutter build apk --release --target-platform android-arm,android-arm64 --build-name=${{ steps.ver.outputs.name }} --build-number=${{ steps.ver.outputs.code }} 2>&1 | tee logs/build.log
           cp build/app/outputs/flutter-apk/app-release.apk dapp-${{ steps.ver.outputs.name }}.apk
 
       - name: Заметки к релизу
@@ -87,6 +87,37 @@ jobs:
           git checkout -q -b ci-logs && git add -A && git commit -qm "android ${{ github.run_number }}"
           git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" ci-logs
 
+  screens:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Скриншоты экранов на тестовых данных
+        run: |
+          flutter create --org com.adxptived --project-name dapp --platforms android,ios . > /dev/null
+          rm -f test/widget_test.dart
+          mkdir -p test/fonts
+          curl -sSL -o test/fonts/Manrope.ttf "https://github.com/google/fonts/raw/main/ofl/manrope/Manrope%5Bwght%5D.ttf" || true
+          flutter pub get > /dev/null
+          set +e
+          flutter test --update-goldens 2>&1 | tee test.log
+          echo "exit $?" >> test.log
+          true
+      - name: Скриншоты → ветка ci-shots
+        if: always()
+        run: |
+          mkdir -p /tmp/shots && cp test.log /tmp/shots/ || true
+          cp test/shots/*.png /tmp/shots/ 2>/dev/null || true
+          cp test/failures/*.png /tmp/shots/ 2>/dev/null || true
+          cd /tmp/shots
+          git init -q && git config user.name ci && git config user.email ci@users.noreply.github.com
+          git checkout -q -b ci-shots && git add -A && git commit -qm "shots ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" ci-shots
+
   ios:
     needs: android
     runs-on: macos-latest
@@ -100,7 +131,7 @@ jobs:
       - name: Сборка iOS без подписи
         run: |
           flutter create --org com.adxptived --project-name dapp --platforms android,ios .
-          rm -rf test
+          rm -f test/widget_test.dart
           pip3 install --break-system-packages pillow >/dev/null 2>&1 || true
           python3 tool/patch_platforms.py
           flutter pub get
