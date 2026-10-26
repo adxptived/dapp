@@ -1,0 +1,33 @@
+
+::group::✅ сырой http
+RAW 200 70682 https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pudge.png
+RAW 200 12674 https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/blink.png
+RAW 200 85985 https://www.opendota.com/assets/images/dota2/rank_icons/rank_icon_5.png
+::endgroup::
+::group::✅ загрузчик
+DBG 11:40:23.033 load https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pudge.png: init
+DBG 11:40:23.035 init: cacheDir
+DBG 11:40:23.047 init: cacheDir=null
+DBG 11:40:23.047 load https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pudge.png: init ok dir=null onDisk=0
+DBG 11:40:23.049 load https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pudge.png: slot (active=0 queue=0)
+DBG 11:40:23.050 load https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pudge.png: slot ok
+DBG 11:40:23.051 get https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pudge.png
+DBG 11:40:23.083 got 200 70682 https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pudge.png
+LOAD 70682 https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pudge.png err=null
+DBG 11:40:23.085 load https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/blink.png: init
+DBG 11:40:23.085 load https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/blink.png: init ok dir=null onDisk=0
+DBG 11:40:23.086 load https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/blink.png: slot (active=0 queue=0)
+DBG 11:40:23.086 load https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/blink.png: slot ok
+DBG 11:40:23.086 get https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/blink.png
+DBG 11:40:23.102 got 200 12674 https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/blink.png
+LOAD 12674 https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/blink.png err=null
+DBG 11:40:23.103 load https://www.opendota.com/assets/images/dota2/rank_icons/rank_icon_5.png: init
+DBG 11:40:23.103 load https://www.opendota.com/assets/images/dota2/rank_icons/rank_icon_5.png: init ok dir=null onDisk=0
+DBG 11:40:23.104 load https://www.opendota.com/assets/images/dota2/rank_icons/rank_icon_5.png: slot (active=0 queue=0)
+DBG 11:40:23.104 load https://www.opendota.com/assets/images/dota2/rank_icons/rank_icon_5.png: slot ok
+DBG 11:40:23.104 get https://www.opendota.com/assets/images/dota2/rank_icons/rank_icon_5.png
+DBG 11:40:23.180 got 200 85985 https://www.opendota.com/assets/images/dota2/rank_icons/rank_icon_5.png
+LOAD 85985 https://www.opendota.com/assets/images/dota2/rank_icons/rank_icon_5.png err=null
+::endgroup::
+
+🎉 2 tests passed.

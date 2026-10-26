@@ -1,0 +1,28 @@
+
+::group::✅ Passing tests
+✅ home
+✅ home_phone
+✅ rating
+✅ analytics
+✅ search
+✅ settings
+✅ player
+✅ compare
+✅ together
+✅ heroes
+✅ matchups
+✅ records
+✅ contest
+✅ graph
+✅ digest
+✅ go
+✅ matches
+✅ roles
+✅ status
+✅ duel
+✅ add
+✅ логика: рейтинг, награды, рекорды, матчапы
+::endgroup::
+
+🎉 22 tests passed.
+exit 0
