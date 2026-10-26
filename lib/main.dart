@@ -10,6 +10,10 @@ import 'ui/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // больше места под раскодированные иконки героев, предметов и аватарки — чтобы не пропадали при прокрутке
+  PaintingBinding.instance.imageCache
+    ..maximumSize = 3000
+    ..maximumSizeBytes = 256 << 20;
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     systemNavigationBarDividerColor: Colors.transparent,

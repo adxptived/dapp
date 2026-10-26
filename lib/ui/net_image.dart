@@ -4,6 +4,9 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'dart:ui' as ui;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -69,7 +72,7 @@ class ImageCache2 {
     final hit = peek(url);
     if (hit != null) return Future.value(hit);
     final f = _failed[url];
-    if (f != null && DateTime.now().difference(f).inMinutes < 10) return Future.value(null);
+    if (f != null && DateTime.now().difference(f).inSeconds < 20) return Future.value(null);
     return _inflight.putIfAbsent(url, () => _load(url).whenComplete(() => _inflight.remove(url)));
   }
 
@@ -113,13 +116,14 @@ class ImageCache2 {
   static Future<int> prefetch(Iterable<String> urls) async {
     final dir = await _cacheDir();
     var n = 0;
-    await Future.wait(urls.map((u) async {
+    // по одной: фоновая докачка занимает максимум один поток, видимые картинки грузятся без очереди
+    for (final u in urls) {
       if (dir != null && await File('${dir.path}/${_name(u)}').exists()) {
         n++;
-        return;
+        continue;
       }
       if (await load(u) != null) n++;
-    }));
+    }
     return n;
   }
 
@@ -147,8 +151,38 @@ class ImageCache2 {
   }
 }
 
-/// Картинка из кэша: мгновенно, если уже в памяти; иначе плавно проявляется.
-class NetImage extends StatefulWidget {
+/// Провайдер картинки с диска/сети через наш кэш. Раскодированная картинка остаётся в кэше Flutter по URL,
+/// поэтому при перерисовке, прокрутке и смене вкладок она показывается мгновенно и не мигает.
+class CachedNetImage extends ImageProvider<CachedNetImage> {
+  final String url;
+  const CachedNetImage(this.url);
+
+  @override
+  Future<CachedNetImage> obtainKey(ImageConfiguration configuration) => SynchronousFuture<CachedNetImage>(this);
+
+  @override
+  ImageStreamCompleter loadImage(CachedNetImage key, ImageDecoderCallback decode) =>
+      MultiFrameImageStreamCompleter(codec: _load(decode), scale: 1.0, debugLabel: url);
+
+  Future<ui.Codec> _load(ImageDecoderCallback decode) async {
+    final bytes = await ImageCache2.load(url);
+    if (bytes == null || bytes.isEmpty) {
+      // не держим «битую» картинку в кэше Flutter — при следующем показе попробуем снова
+      scheduleMicrotask(() => PaintingBinding.instance.imageCache.evict(this));
+      throw StateError('нет картинки: $url');
+    }
+    return decode(await ui.ImmutableBuffer.fromUint8List(bytes));
+  }
+
+  @override
+  bool operator ==(Object other) => other is CachedNetImage && other.url == url;
+
+  @override
+  int get hashCode => url.hashCode;
+}
+
+/// Картинка из кэша: мгновенно, если уже загружалась; первый раз — плавно проявляется.
+class NetImage extends StatelessWidget {
   final String? url;
   final double? width, height;
   final BoxFit fit;
@@ -156,60 +190,28 @@ class NetImage extends StatefulWidget {
   final Widget? placeholder;
   const NetImage(this.url,
       {super.key, this.width, this.height, this.fit = BoxFit.cover, this.alignment = Alignment.center, this.placeholder});
-  @override
-  State<NetImage> createState() => _NetImageState();
-}
-
-class _NetImageState extends State<NetImage> {
-  Uint8List? bytes;
-  bool fromMemory = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _start();
-  }
-
-  @override
-  void didUpdateWidget(covariant NetImage old) {
-    super.didUpdateWidget(old);
-    if (old.url != widget.url) _start();
-  }
-
-  void _start() {
-    final url = widget.url;
-    if (url == null || url.isEmpty) {
-      bytes = null;
-      return;
-    }
-    final hit = ImageCache2.peek(url);
-    if (hit != null) {
-      bytes = hit;
-      fromMemory = true;
-      return;
-    }
-    bytes = null;
-    fromMemory = false;
-    ImageCache2.load(url).then((b) {
-      if (mounted && widget.url == url && b != null) setState(() => bytes = b);
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    final ph = widget.placeholder ?? SizedBox(width: widget.width, height: widget.height);
-    final b = bytes;
-    final img = b == null
-        ? ph
-        : Image.memory(b,
-            key: ValueKey(widget.url),
-            width: widget.width,
-            height: widget.height,
-            fit: widget.fit,
-            alignment: widget.alignment,
-            gaplessPlayback: true,
-            errorBuilder: (_, __, ___) => ph);
-    if (fromMemory) return img;
-    return AnimatedSwitcher(duration: const Duration(milliseconds: 250), child: img);
+    final ph = placeholder ?? SizedBox(width: width, height: height);
+    final u = url;
+    if (u == null || u.isEmpty) return ph;
+    return Image(
+      image: CachedNetImage(u),
+      width: width,
+      height: height,
+      fit: fit,
+      alignment: alignment,
+      gaplessPlayback: true,
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (_, __, ___) => ph,
+      frameBuilder: (context, child, frame, sync) {
+        if (sync) return child;
+        return Stack(fit: StackFit.passthrough, children: [
+          if (frame == null) ph,
+          AnimatedOpacity(opacity: frame == null ? 0 : 1, duration: const Duration(milliseconds: 220), child: child),
+        ]);
+      },
+    );
   }
 }
