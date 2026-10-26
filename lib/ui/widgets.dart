@@ -918,9 +918,110 @@ String fmtAgo(int ts) {
 
 String pct(double v) => '${(v * 100).toStringAsFixed(0)}%';
 
-void toast(BuildContext context, String text) {
-  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+OverlayEntry? _toastEntry;
+
+/// Уведомление: стеклянная плашка сверху, под верхней панелью; выезжает и сама исчезает (смахивается вверх).
+void toast(BuildContext context, String text, {IconData? icon}) {
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  if (overlay == null) return;
+  _toastEntry?.remove();
+  _toastEntry = null;
+  final low = text.toLowerCase();
+  final ic = icon ??
+      (low.contains('не удалось') || low.contains('ошиб') || low.contains('не получ')
+          ? Icons.error_outline_rounded
+          : (low.contains('последняя версия') || low.contains('сохран') || low.contains('готово') || low.contains('восстановлено'))
+              ? Icons.check_circle_rounded
+              : Icons.info_outline_rounded);
+  late OverlayEntry entry;
+  entry = OverlayEntry(builder: (ctx) => _Toast(text: text, icon: ic, onDone: () {
+        if (_toastEntry == entry) _toastEntry = null;
+        entry.remove();
+      }));
+  _toastEntry = entry;
+  overlay.insert(entry);
+}
+
+class _Toast extends StatefulWidget {
+  final String text;
+  final IconData icon;
+  final VoidCallback onDone;
+  const _Toast({required this.text, required this.icon, required this.onDone});
+  @override
+  State<_Toast> createState() => _ToastState();
+}
+
+class _ToastState extends State<_Toast> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 320));
+  bool _closing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _c.forward();
+    Future.delayed(Duration(milliseconds: 2200 + widget.text.length * 25), _close);
+  }
+
+  Future<void> _close() async {
+    if (_closing || !mounted) return;
+    _closing = true;
+    await _c.reverse();
+    widget.onDone();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.of(context).padding.top + 8 + TopBar.height + 10;
+    final a = CurvedAnimation(parent: _c, curve: Curves.easeOutBack, reverseCurve: Curves.easeIn);
+    return Positioned(
+      left: 22,
+      right: 22,
+      top: top,
+      child: AnimatedBuilder(
+        animation: a,
+        builder: (_, child) => Opacity(
+          opacity: _c.value.clamp(0.0, 1.0),
+          child: Transform.translate(offset: Offset(0, -24 * (1 - a.value)), child: child),
+        ),
+        child: GestureDetector(
+          onTap: _close,
+          onVerticalDragEnd: (_) => _close(),
+          child: Material(
+            type: MaterialType.transparency,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 22, offset: Offset(0, 8))],
+              ),
+              child: Glass(
+                radius: BorderRadius.circular(24),
+                color: Colors.white,
+                tint: 0.08,
+                blur: 18,
+                padding: const EdgeInsets.fromLTRB(14, 12, 16, 12),
+                child: Row(children: [
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(color: C.lime.withValues(alpha: 0.22), shape: BoxShape.circle),
+                    child: Icon(widget.icon, size: 18, color: C.lime),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(widget.text, style: T.body.copyWith(color: Colors.white, fontWeight: FontWeight.w600))),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 Future<bool> confirm(BuildContext context, String title, String text, {String ok = 'Да'}) async {

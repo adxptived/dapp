@@ -22,6 +22,7 @@ import 'package:dapp/ui/screens/records.dart';
 import 'package:dapp/ui/screens/roles.dart';
 import 'package:dapp/ui/screens/status.dart';
 import 'package:dapp/ui/screens/together.dart';
+import 'package:dapp/ui/net_image.dart';
 import 'package:dapp/ui/shell.dart';
 import 'package:dapp/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -152,6 +153,7 @@ void main() {
     await loadFonts();
     RefData.I.seedForTests(heroes);
     Shell.skipStartup = true;
+    ImageCache2.offline = true;
     store = buildStore();
   });
 

@@ -103,6 +103,7 @@ class ImageCache2 {
         }
       }
     } catch (_) {}
+    if (offline) return null;
     await _slot();
     try {
       // несколько попыток и запасные адреса Steam CDN: если один домен режется сетью/VPN, берём другой
@@ -150,6 +151,7 @@ class ImageCache2 {
   }
 
   static String? lastError;
+  static bool offline = false; // тесты: без сети
   static int okCount = 0, failCount = 0;
 
   static const _steamHosts = [
