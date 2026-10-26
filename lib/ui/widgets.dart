@@ -414,6 +414,68 @@ class KvTable extends StatelessWidget {
       );
 }
 
+/// Сетка показателей: подпись мелко, значение крупно — вместо «табличного» вида.
+class StatGrid extends StatelessWidget {
+  final List<StatItem> items;
+  final int columns;
+  const StatGrid(this.items, {super.key, this.columns = 2});
+  @override
+  Widget build(BuildContext context) {
+    final rows = <List<StatItem>>[];
+    for (var i = 0; i < items.length; i += columns) {
+      rows.add(items.sublist(i, i + columns > items.length ? items.length : i + columns));
+    }
+    return Column(children: [
+      for (var r = 0; r < rows.length; r++)
+        Padding(
+          padding: EdgeInsets.only(bottom: r == rows.length - 1 ? 0 : 8),
+          child: IntrinsicHeight(
+            child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              for (var i = 0; i < columns; i++) ...[
+                if (i > 0) const SizedBox(width: 8),
+                Expanded(child: i < rows[r].length ? _tile(rows[r][i]) : const SizedBox()),
+              ],
+            ]),
+          ),
+        ),
+    ]);
+  }
+
+  Widget _tile(StatItem it) => Container(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 11),
+        decoration: BoxDecoration(
+          color: it.accent ? C.lime.withValues(alpha: 0.14) : C.glass2,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: it.accent ? C.lime.withValues(alpha: 0.35) : C.glass),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+          Row(children: [
+            if (it.icon != null) ...[Icon(it.icon, size: 13, color: C.muted), const SizedBox(width: 4)],
+            Expanded(child: Text(it.label, style: T.tiny, overflow: TextOverflow.ellipsis)),
+          ]),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(it.value, style: T.title.copyWith(fontSize: 19, color: it.color ?? C.text, fontWeight: FontWeight.w700)),
+          ),
+          if (it.sub != null) ...[
+            const SizedBox(height: 2),
+            Text(it.sub!, style: T.tiny.copyWith(color: it.subColor ?? C.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
+          ],
+        ]),
+      );
+}
+
+class StatItem {
+  final String label, value;
+  final String? sub;
+  final Color? color, subColor;
+  final IconData? icon;
+  final bool accent;
+  const StatItem(this.label, this.value, {this.sub, this.color, this.subColor, this.icon, this.accent = false});
+}
+
 Text valueText(String s, {Color? color}) => Text(s, style: T.small.copyWith(color: color ?? C.text));
 
 String signed(num v) => v > 0 ? '+${v.round()}' : '${v.round()}';
@@ -738,8 +800,8 @@ class SectionTitle extends StatelessWidget {
   const SectionTitle(this.text, {super.key, this.trailing});
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
-        child: Row(children: [Expanded(child: Text(text, style: T.title)), if (trailing != null) trailing!]),
+        padding: const EdgeInsets.fromLTRB(4, 24, 4, 12),
+        child: Row(children: [Expanded(child: Text(text, style: T.title.copyWith(fontSize: 19, fontWeight: FontWeight.w700))), if (trailing != null) trailing!]),
       );
 }
 

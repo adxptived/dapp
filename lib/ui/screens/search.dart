@@ -137,12 +137,13 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ]),
           const SizedBox(height: 14),
-          KvTable(rows: [
-            ('Ранкед', valueText('$win–$lose · ${win + lose == 0 ? '—' : pct(win / (win + lose))}')),
-            ('Баланс побед', valueText(signed(win - lose), color: deltaColor(win - lose))),
+          StatGrid(columns: 2, [
+            StatItem('Ранкед', '$win–$lose', sub: win + lose == 0 ? null : pct(win / (win + lose))),
+            StatItem('Баланс побед', signed(win - lose), color: deltaColor(win - lose)),
             if (recent.isNotEmpty) ...[
-              ('K/D/A (посл.)', valueText('${avg('kills').toStringAsFixed(1)} / ${avg('deaths').toStringAsFixed(1)} / ${avg('assists').toStringAsFixed(1)}')),
-              ('GPM / урон', valueText('${avg('gold_per_min').round()} / ${kfmt(avg('hero_damage'))}')),
+              StatItem('K/D/A (посл.)',
+                  '${avg('kills').toStringAsFixed(1)}/${avg('deaths').toStringAsFixed(1)}/${avg('assists').toStringAsFixed(1)}'),
+              StatItem('GPM / урон', '${avg('gold_per_min').round()}', sub: '${kfmt(avg('hero_damage'))} урона'),
             ],
           ]),
           if (r.heroes.isNotEmpty) ...[

@@ -119,21 +119,33 @@ class _RatingScreenState extends State<RatingScreen> {
           CircleBtn(Icons.ios_share_rounded, size: 42, onTap: () => _share(store, p, ss)),
         ]),
         const SizedBox(height: 14),
-        KvTable(headLeft: 'Метрика', headRight: 'Все игры', rows: [
-          ('Текущее', valueText('$games')),
-          ('Победы', valueText('$wins–${games - wins}', color: C.lime)),
-          ('Винрейт', valueText(pct(wr), color: wr >= 0.5 ? C.lime : C.red)),
-          ('Статус', valueText(games == 0 ? 'Тишина' : wr >= 0.55 ? 'Разнос' : wr >= 0.5 ? 'В плюсе' : 'В минусе')),
+        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          AnimatedNumber(wr * 100, style: T.display, format: (v) => games == 0 ? '—' : '${v.round()}%'),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('винрейт', style: T.small.copyWith(color: C.text, fontWeight: FontWeight.w700)),
+                Text('$wins–${games - wins} · $games игр', style: T.tiny),
+              ]),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: SmallPill(games == 0 ? 'тишина' : wr >= 0.55 ? 'разнос 🔥' : wr >= 0.5 ? 'в плюсе' : 'в минусе', lime: wr >= 0.5 && games > 0),
+          ),
         ]),
         const SizedBox(height: 10),
-        KvTable(headLeft: 'Метрика', headRight: 'Рейтинг', rows: [
-          ('Средний MMR', valueText(avgMmr == null ? '—' : '≈${avgMmr.round()}')),
-          ('Изменение', valueText('${signed(totalDelta)} MMR', color: deltaColor(totalDelta))),
-          ('Вместе', valueText(together.games == 0 ? 'нет игр' : '${together.wins}–${together.losses}')),
-          (
-            'Лучшая пара',
-            valueText(duo == null ? '—' : '${named[duo.a].$1} + ${named[duo.b].$1} (${duo.games})'),
-          ),
+        BarMeter(wr, bars: 36, height: 34),
+        const SizedBox(height: 14),
+        StatGrid(columns: 2, [
+          StatItem('Средний MMR', avgMmr == null ? '—' : '≈${avgMmr.round()}', icon: Icons.military_tech_outlined),
+          StatItem('Изменение', '${signed(totalDelta)} MMR', color: deltaColor(totalDelta), icon: Icons.trending_up_rounded),
+          StatItem('Вместе', together.games == 0 ? '—' : '${together.wins}–${together.losses}',
+              sub: together.games == 0 ? 'нет общих игр' : pct(together.wins / together.games), icon: Icons.group_outlined),
+          StatItem('Лучшая пара', duo == null ? '—' : '${duo.games} игр',
+              sub: duo == null ? null : '${named[duo.a].$1} + ${named[duo.b].$1}', icon: Icons.favorite_border_rounded),
         ]),
       ]),
     );

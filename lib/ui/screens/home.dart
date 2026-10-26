@@ -245,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
           width: 118,
           child: Column(children: [
             Container(
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(color: C.glass2, borderRadius: BorderRadius.circular(22), border: Border.all(color: C.glass)),
               padding: const EdgeInsets.all(4),
               child: LayoutBuilder(builder: (context, box) {
                 final keys = opts.keys.toList();
@@ -260,7 +260,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       left: 0,
                       right: 0,
                       height: 44,
-                      child: Container(decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(16))),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: C.lime,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [BoxShadow(color: C.lime.withValues(alpha: 0.35), blurRadius: 16, spreadRadius: -6)],
+                        ),
+                      ),
                     ),
                     Column(children: [
                       for (var k = 0; k < keys.length; k++)
@@ -273,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Center(
                               child: AnimatedDefaultTextStyle(
                                 duration: const Duration(milliseconds: 220),
-                                style: T.small.copyWith(color: k == i ? Colors.white : Colors.black87, fontWeight: FontWeight.w700),
+                                style: T.small.copyWith(color: k == i ? C.onLime : C.muted, fontWeight: FontWeight.w700),
                                 child: Text(opts[keys[k]]!),
                               ),
                             ),

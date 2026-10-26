@@ -165,7 +165,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
         );
     return Row(children: [
-      a(Icons.tune_rounded, 'Задать MMR', () => _setMmr(context, store, p)),
+      a(Icons.tune_rounded, 'MMR', () => _setMmr(context, store, p)),
       a(Icons.list_alt_rounded, 'Матчи', () => push(context, MatchesListScreen(accountId: p.accountId))),
       a(Icons.sports_kabaddi_outlined, 'Соперники', () => push(context, MatchupsScreen(accountId: p.accountId))),
       a(Icons.view_week_outlined, 'Позиции', () => push(context, RolesScreen(accountId: p.accountId))),
@@ -181,21 +181,22 @@ class _PlayerScreenState extends State<PlayerScreen> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Статистика', style: T.sub),
         const SizedBox(height: 12),
-        KvTable(rows: [
-          ('Игры', valueText('${s.agg.games}')),
-          ('Победы', valueText('${s.agg.wins}–${s.agg.losses} · ${s.agg.games == 0 ? '—' : pct(s.agg.winrate)}',
-              color: s.agg.winrate >= 0.5 ? C.lime : C.red)),
-          ('K / D / A', valueText(s.agg.games == 0
-              ? '—'
-              : '${s.agg.avgK.toStringAsFixed(1)} / ${s.agg.avgD.toStringAsFixed(1)} / ${s.agg.avgA.toStringAsFixed(1)}')),
-          ('KDA', valueText(s.agg.games == 0 ? '—' : s.agg.kda.toStringAsFixed(2))),
-          ('GPM / XPM', valueText('${n0(s.avgGpm)} / ${n0(s.avgXpm)}')),
-          ('Урон', valueText(s.avgDamage == null ? '—' : '${kfmt(s.avgDamage!)} / игра')),
-          ('Нетворс', valueText(s.avgNetWorth == null ? '—' : kfmt(s.avgNetWorth!))),
-          ('Перф', valueText(s.avgPerf == null ? '—' : '${(s.avgPerf! * 100).toStringAsFixed(0)}/100 (${s.enrichedGames} игр)')),
-          ('Лучшая серия', valueText(s.bestStreak == 0 ? '—' : '${s.bestStreak} побед')),
-          if (style.isNotEmpty) ('Стиль', valueText(style)),
+        StatGrid(columns: 3, [
+          StatItem('Игры', '${s.agg.games}', icon: Icons.sports_esports_outlined),
+          StatItem('Победы', '${s.agg.wins}–${s.agg.losses}',
+              sub: s.agg.games == 0 ? null : pct(s.agg.winrate), subColor: s.agg.winrate >= 0.5 ? C.lime : C.red),
+          StatItem('KDA', s.agg.games == 0 ? '—' : s.agg.kda.toStringAsFixed(2), accent: true),
+          StatItem('K / D / A', s.agg.games == 0 ? '—' : '${s.agg.avgK.toStringAsFixed(1)}/${s.agg.avgD.toStringAsFixed(1)}/${s.agg.avgA.toStringAsFixed(1)}'),
+          StatItem('GPM', n0(s.avgGpm), sub: s.avgXpm == null ? null : 'XPM ${n0(s.avgXpm)}'),
+          StatItem('Урон', s.avgDamage == null ? '—' : kfmt(s.avgDamage!), sub: 'за игру'),
+          StatItem('Нетворс', s.avgNetWorth == null ? '—' : kfmt(s.avgNetWorth!)),
+          StatItem('Перф', s.avgPerf == null ? '—' : '${(s.avgPerf! * 100).toStringAsFixed(0)}', sub: s.avgPerf == null ? null : 'из 100'),
+          StatItem('Серия', s.bestStreak == 0 ? '—' : '${s.bestStreak}', sub: 'лучшая'),
         ]),
+        if (style.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Row(children: [Text('Стиль: ', style: T.small), SmallPill(style)]),
+        ],
         if (s.detailGames < s.agg.games && s.agg.games > 0)
           Padding(
             padding: const EdgeInsets.only(top: 8),
@@ -359,28 +360,28 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Widget _splits(PlayerSummary s) {
     final sp = soloPartySplit(s.window);
     final hours = bestWorstHour(winrateByHour(s.window));
-    String wl((int, int) v) => v.$1 == 0 ? '—' : '${v.$2}–${v.$1 - v.$2} (${pct(v.$2 / v.$1)})';
+    String wl((int, int) v) => v.$1 == 0 ? '—' : '${v.$2}–${v.$1 - v.$2} · ${pct(v.$2 / v.$1)}';
     final wins = s.window.where((m) => m.won).toList(), losses = s.window.where((m) => !m.won).toList();
     String avgKda(List<M> l) => l.isEmpty ? '—' : (l.map((m) => m.kda).reduce((a, b) => a + b) / l.length).toStringAsFixed(1);
     String avgD(List<M> l) => l.isEmpty ? '—' : (l.map((m) => m.deaths).reduce((a, b) => a + b) / l.length).toStringAsFixed(1);
     return AppCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Соло vs группа', style: T.sub),
+        Text('Соло и группа', style: T.sub),
         const SizedBox(height: 12),
-        KvTable(rows: [
-          ('Соло', valueText(wl(sp['solo']!))),
-          ('В группе', valueText(wl(sp['party']!))),
-          if (sp['unknown']!.$1 > 0) ('Неизвестно', valueText(wl(sp['unknown']!))),
-          ('В победах', valueText('KDA ${avgKda(wins)} · смертей ${avgD(wins)}')),
-          ('В поражениях', valueText('KDA ${avgKda(losses)} · смертей ${avgD(losses)}')),
-          if (hours.$1 != null) ('Лучший час', valueText('${hours.$1!.$1}:00 · ${pct(hours.$1!.$2)}', color: C.lime)),
-          if (hours.$2 != null) ('Худший час', valueText('${hours.$2!.$1}:00 · ${pct(hours.$2!.$2)}', color: C.red)),
-          (
-            'Длительность',
-            valueText(s.window.where((m) => m.duration != null).isEmpty
+        StatGrid(columns: 2, [
+          StatItem('Соло', wl(sp['solo']!), icon: Icons.person_outline_rounded),
+          StatItem('В группе', wl(sp['party']!), icon: Icons.group_outlined),
+          StatItem('В победах', 'KDA ${avgKda(wins)}', sub: 'смертей ${avgD(wins)}'),
+          StatItem('В поражениях', 'KDA ${avgKda(losses)}', sub: 'смертей ${avgD(losses)}'),
+          if (hours.$1 != null) StatItem('Лучший час', '${hours.$1!.$1}:00', sub: pct(hours.$1!.$2), subColor: C.lime),
+          if (hours.$2 != null) StatItem('Худший час', '${hours.$2!.$1}:00', sub: pct(hours.$2!.$2), subColor: C.red),
+          StatItem(
+            'Средняя игра',
+            s.window.where((m) => m.duration != null).isEmpty
                 ? '—'
-                : 'ср. ${fmtDuration((mean(s.window.map((m) => m.duration)) ?? 0).round())}'),
+                : fmtDuration((mean(s.window.map((m) => m.duration)) ?? 0).round()),
           ),
+          if (sp['unknown']!.$1 > 0) StatItem('Размер неизвестен', wl(sp['unknown']!)),
         ]),
       ]),
     );
@@ -500,11 +501,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
     }
     return AppCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        KvTable(rows: [
-          ('Старт', valueText('${l.start}')),
-          ('Заработано игрой', valueText('${signed(l.earned)} за ${gamesWord(l.games)}', color: deltaColor(l.earned))),
-          ('Правки', valueText(signed(l.corrections))),
-          ('Сейчас', valueText('≈${l.current}', color: C.lime)),
+        StatGrid(columns: 2, [
+          StatItem('Старт', '${l.start}'),
+          StatItem('Сейчас', '≈${l.current}', accent: true),
+          StatItem('Игрой', signed(l.earned), color: deltaColor(l.earned), sub: 'за ${gamesWord(l.games)}'),
+          StatItem('Правки', signed(l.corrections), sub: 'ручные поправки'),
         ]),
         const SizedBox(height: 10),
         for (var i = 0; i < p.anchors.length; i++)
