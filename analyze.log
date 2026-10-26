@@ -1,0 +1,31 @@
+Analyzing dapp...                                               
+
+   info • Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' • lib/data/api.dart:184:9 • use_null_aware_elements
+   info • Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' • lib/data/api.dart:186:9 • use_null_aware_elements
+warning • The value of the local variable 'lastErr' isn't used. Try removing the variable or using it • lib/services/updater.dart:117:13 • unused_local_variable
+   info • 'of' is deprecated and shouldn't be used. Use TickerMode.valuesOf to get both enabled and forceFrames. This feature was deprecated after v3.35.0-0.0.pre. Try replacing the use of the deprecated member with the replacement • lib/ui/fx.dart:240:21 • deprecated_member_use
+   info • Unnecessary use of multiple underscores. Try using '_' • lib/ui/fx.dart:284:25 • unnecessary_underscores
+   info • The type parameter name 'T' matches a visible type name. Try changing the type parameter name to not match an existing type • lib/ui/fx.dart:289:20 • avoid_types_as_parameter_names
+   info • Unnecessary use of multiple underscores. Try using '_' • lib/ui/fx.dart:292:24 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores. Try using '_' • lib/ui/fx.dart:292:28 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores. Try using '_' • lib/ui/fx.dart:293:34 • unnecessary_underscores
+   info • The type parameter name 'T' matches a visible type name. Try changing the type parameter name to not match an existing type • lib/ui/fx.dart:306:27 • avoid_types_as_parameter_names
+   info • The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/foundation.dart'. Try removing the import directive • lib/ui/net_image.dart:5:8 • unnecessary_import
+   info • Unnecessary constructor invocation. Try using a collection literal • lib/ui/net_image.dart:17:23 • prefer_collection_literals
+   info • Unnecessary use of multiple underscores. Try using '_' • lib/ui/net_image.dart:335:25 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores. Try using '_' • lib/ui/net_image.dart:335:29 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores. Try using '_' • lib/ui/screens/duel.dart:151:27 • unnecessary_underscores
+   info • Unnecessary use of string interpolation. Try replacing the string literal with the variable name • lib/ui/screens/player.dart:193:54 • unnecessary_string_interpolations
+   info • The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/services.dart'. Try removing the import directive • lib/ui/screens/settings.dart:3:8 • unnecessary_import
+   info • Unnecessary use of multiple underscores. Try using '_' • lib/ui/screens/settings.dart:247:46 • unnecessary_underscores
+   info • 'onReorder' is deprecated and shouldn't be used. Use the onReorderItem callback instead. The onReorderItem callback adjusts the newIndex parameter for a removed item at the oldIndex. This feature was deprecated after v3.41.0-0.0.pre. Try replacing the use of the deprecated member with the replacement • lib/ui/screens/settings.dart:248:19 • deprecated_member_use
+   info • Unnecessary use of multiple underscores. Try using '_' • lib/ui/shell.dart:80:62 • unnecessary_underscores
+warning • Unused import: 'dart:ui'. Try removing the import directive • lib/ui/widgets.dart:3:8 • unused_import
+   info • Unnecessary use of multiple underscores. Try using '_' • lib/ui/widgets.dart:544:25 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores. Try using '_' • lib/ui/widgets.dart:669:23 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores. Try using '_' • lib/ui/widgets.dart:723:25 • unnecessary_underscores
+   info • Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' • lib/ui/widgets.dart:825:128 • use_null_aware_elements
+   info • Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' • lib/ui/widgets.dart:876:9 • use_null_aware_elements
+   info • 'of' is deprecated and shouldn't be used. Use TickerMode.valuesOf to get both enabled and forceFrames. This feature was deprecated after v3.35.0-0.0.pre. Try replacing the use of the deprecated member with the replacement • lib/ui/widgets.dart:1119:20 • deprecated_member_use
+
+27 issues found. (ran in 13.8s)
