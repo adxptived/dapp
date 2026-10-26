@@ -99,9 +99,9 @@ class Glass extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color.lerp(color, Colors.white, 0.10)!.withValues(alpha: tint),
+                  Color.lerp(color, Colors.white, 0.10)!.withValues(alpha: (tint * 1.6).clamp(0, 1)),
                   color.withValues(alpha: tint),
-                  color.withValues(alpha: (tint + 0.1).clamp(0, 1)),
+                  color.withValues(alpha: tint),
                 ],
                 stops: const [0, 0.5, 1],
               ),

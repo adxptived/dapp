@@ -35,7 +35,7 @@ class HeaderAvatar extends StatelessWidget {
     final today = store.matchesOf(p).where((m) => m.startTime >= localDayStart()).length;
     return GestureDetector(
       onTap: () => openPlayer(context, p),
-      child: Avatar(p.avatar, size: 46, fallback: p.name, badge: today > 0 ? today : null),
+      child: Avatar(p.avatar, size: 38, fallback: p.name, badge: today > 0 ? today : null),
     );
   }
 }

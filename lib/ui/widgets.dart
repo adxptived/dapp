@@ -184,6 +184,7 @@ class RankBadge extends StatelessWidget {
 }
 
 /// Шапка экрана: круглая кнопка слева, заголовок по центру, аватар справа.
+/// Верхняя панель: плавающая стеклянная капсула (как нижнее меню) — кнопка, заголовок, аватар.
 class TopBar extends StatelessWidget {
   final String title;
   final IconData? leading;
@@ -191,25 +192,57 @@ class TopBar extends StatelessWidget {
   final Widget? trailing;
   const TopBar({super.key, required this.title, this.leading, this.onLeading, this.trailing});
 
+  static const height = 56.0;
+
   @override
   Widget build(BuildContext context) {
     final canPop = Navigator.of(context).canPop();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Row(children: [
-        if (leading != null || canPop)
-          CircleBtn(leading ?? Icons.arrow_back_ios_new_rounded,
-              onTap: onLeading ?? (canPop ? () => Navigator.of(context).pop() : null))
-        else
-          const SizedBox(width: 46),
-        Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: Text(title, key: ValueKey(title), textAlign: TextAlign.center, style: T.sub, overflow: TextOverflow.ellipsis),
-          ),
+    final icon = leading ?? (canPop ? Icons.arrow_back_ios_new_rounded : null);
+    final tap = onLeading ?? (canPop ? () => Navigator.of(context).pop() : null);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 24, offset: Offset(0, 8))],
+      ),
+      child: Glass(
+        radius: BorderRadius.circular(32),
+        color: Colors.white,
+        tint: 0.06,
+        blur: 16,
+        child: SizedBox(
+          height: height,
+          child: Row(children: [
+            const SizedBox(width: 6),
+            SizedBox(
+              width: 44,
+              height: 44,
+              child: icon == null
+                  ? null
+                  : Pressable(
+                      scale: 0.85,
+                      onTap: tap,
+                      child: Center(child: Icon(icon, size: icon == Icons.arrow_back_ios_new_rounded ? 19 : 22, color: Colors.white)),
+                    ),
+            ),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: Text(title,
+                    key: ValueKey(title),
+                    textAlign: TextAlign.center,
+                    style: T.sub.copyWith(fontWeight: FontWeight.w700),
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ),
+            SizedBox(
+              width: 44,
+              height: 44,
+              child: trailing == null ? null : FittedBox(fit: BoxFit.scaleDown, child: trailing),
+            ),
+            const SizedBox(width: 6),
+          ]),
         ),
-        SizedBox(width: 46, child: trailing ?? const SizedBox()),
-      ]),
+      ),
     );
   }
 }
@@ -973,10 +1006,11 @@ class PageScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
-    const barH = 62.0;
+    final barTop = top + 8;
+    final listTop = barTop + TopBar.height + 14;
     final list = ListView(
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-      padding: EdgeInsets.fromLTRB(16, top + barH + 4, 16, 120),
+      padding: EdgeInsets.fromLTRB(16, listTop, 16, 120),
       children: [
         for (var i = 0; i < children.length; i++) animate ? FadeSlideIn(index: i, child: children[i]) : children[i],
       ],
@@ -1002,29 +1036,34 @@ class PageScaffold extends StatelessWidget {
               : RefreshIndicator(
                   color: C.onLime,
                   backgroundColor: C.lime,
-                  edgeOffset: top + barH,
+                  edgeOffset: listTop - 10,
                   onRefresh: onRefresh!,
                   child: list,
                 ),
         ),
+        // лёгкое затемнение только под строкой состояния, чтобы часы и значки читались
         Positioned(
           left: 0,
           right: 0,
           top: 0,
-          child: Container(
-                padding: EdgeInsets.only(top: top),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [C.glow, Color(0xF2271E40)],
-                  ),
-                ),
-                child: SizedBox(
-                  height: barH,
-                  child: TopBar(title: title, trailing: trailing, leading: leading, onLeading: onLeading),
+          height: top + 12,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black.withValues(alpha: 0.45), Colors.black.withValues(alpha: 0)],
                 ),
               ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 14,
+          right: 14,
+          top: barTop,
+          child: TopBar(title: title, trailing: trailing, leading: leading, onLeading: onLeading),
         ),
       ]),
     );

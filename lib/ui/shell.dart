@@ -147,8 +147,8 @@ class _BottomNav extends StatelessWidget {
         child: Glass(
           radius: BorderRadius.circular(40),
           color: Colors.white,
-          tint: 0.10,
-          blur: 18,
+          tint: 0.06,
+          blur: 16,
           child: SizedBox(
             height: 66,
             child: LayoutBuilder(builder: (context, box) {
