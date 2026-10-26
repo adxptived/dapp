@@ -4,6 +4,43 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+/// Счётчик трафика по дням (API + картинки + обновления), хранится вместе с состоянием.
+class Traffic {
+  static final Map<int, int> _days = {};
+  static int _today() {
+    final d = DateTime.now();
+    return d.year * 10000 + d.month * 100 + d.day;
+  }
+
+  static void add(int bytes) {
+    final k = _today();
+    _days[k] = (_days[k] ?? 0) + bytes + 350; // + заголовки
+  }
+
+  static int get today => _days[_today()] ?? 0;
+  static int lastDays(int n) {
+    final cut = DateTime.now().subtract(Duration(days: n));
+    final from = cut.year * 10000 + cut.month * 100 + cut.day;
+    return _days.entries.where((e) => e.key > from).fold(0, (a, e) => a + e.value);
+  }
+
+  static void load(dynamic j) {
+    if (j is! Map) return;
+    j.forEach((k, v) {
+      final day = int.tryParse('$k');
+      if (day != null && v is num) _days[day] = (_days[day] ?? 0) < v.toInt() ? v.toInt() : _days[day]!;
+    });
+  }
+
+  static Map<String, int> toJson() {
+    final keys = _days.keys.toList()..sort();
+    for (final k in keys.take(keys.length > 40 ? keys.length - 40 : 0)) {
+      _days.remove(k);
+    }
+    return _days.map((k, v) => MapEntry('$k', v));
+  }
+}
+
 class ApiError implements Exception {
   final String message;
   final int? status;
@@ -74,6 +111,7 @@ class OpenDota {
       await _throttle();
       try {
         final resp = await _client.get(_uri(path, params)).timeout(const Duration(seconds: 30));
+        Traffic.add(resp.bodyBytes.length);
         final day = int.tryParse(resp.headers['x-rate-limit-remaining-day'] ?? '');
         if (day != null) remainingDay = day;
         final min = int.tryParse(resp.headers['x-rate-limit-remaining-minute'] ?? '');
@@ -227,6 +265,7 @@ class Stratz {
                 },
                 body: jsonEncode({'query': q}))
             .timeout(const Duration(seconds: 30));
+        Traffic.add(resp.bodyBytes.length);
         if (resp.statusCode == 200) {
           final p = jsonDecode(utf8.decode(resp.bodyBytes));
           health.success();

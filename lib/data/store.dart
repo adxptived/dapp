@@ -69,6 +69,7 @@ class Store extends ChangeNotifier {
     await _loadState();
     od = OpenDota(apiKey: settings.openDotaKey, base: settings.openDotaBase);
     stratz = Stratz(settings.stratzKey);
+    applyKeys();
     await RefData.I.load(dir);
     for (final p in players) {
       _matches[p.accountId] = await _loadMatches(p.accountId);
@@ -92,6 +93,7 @@ class Store extends ChangeNotifier {
   }
 
   void applyKeys() {
+    RefData.I.lowData = settings.dataSaver;
     od.apiKey = settings.openDotaKey.trim();
     od.base = settings.openDotaBase.trim().isEmpty ? OpenDota.defaultBase : settings.openDotaBase.trim();
     stratz.apiKey = settings.stratzKey.trim();
@@ -122,6 +124,7 @@ class Store extends ChangeNotifier {
       ..clear()
       ..addAll((j['seasons'] as List? ?? []).whereType<Map>().map((e) => Season.fromJson(Map<String, dynamic>.from(e))));
     lastFullRefresh = (j['last_full_refresh'] as num?)?.toInt() ?? 0;
+    Traffic.load(j['traffic']);
   }
 
   Map<String, dynamic> _stateJson() => {
@@ -130,6 +133,7 @@ class Store extends ChangeNotifier {
         'settings': settings.toJson(),
         'seasons': seasons.map((s) => s.toJson()).toList(),
         'last_full_refresh': lastFullRefresh,
+        'traffic': Traffic.toJson(),
       };
 
   Future<void> save() async {
@@ -314,6 +318,12 @@ class Store extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setGoal(Player p, int? goal) async {
+    p.goalMmr = goal;
+    await save();
+    notifyListeners();
+  }
+
   Future<void> removeAnchor(Player p, int index) async {
     if (index >= 0 && index < p.anchors.length) p.anchors.removeAt(index);
     await save();
@@ -415,8 +425,56 @@ class Store extends ChangeNotifier {
     final now = nowTs();
     final list = _matches.putIfAbsent(p.accountId, () => []);
     final known = {for (final m in list) m.matchId: m};
-    // профиль: ранг, ник, аватар — не чаще раза в 30 минут
-    if (full || now - p.lastProfile > 1800) {
+    final added = <M>[];
+
+    void take(Map<String, dynamic> r, {bool requireRanked = false}) {
+      if (r['match_id'] == null) return;
+      if (requireRanked && (r['lobby_type'] as num?)?.toInt() != rankedLobby) return;
+      final m = _fromListRow(r);
+      if (m.lobbyType != null && m.lobbyType != rankedLobby) return;
+      final old = known[m.matchId];
+      if (old == null) {
+        list.add(m);
+        known[m.matchId] = m;
+        added.add(m);
+      } else {
+        _merge(old, m);
+      }
+    }
+
+    // Матчи — инкрементально: сначала 10 последних; если все новые — берём больше (50 → 250 → всё).
+    // Вся история качается один раз, при добавлении игрока.
+    var rowsTotal = 0;
+    if (full || list.isEmpty) {
+      final rows = await od.matches(p.accountId, limit: null);
+      rowsTotal = rows.length;
+      rows.forEach(take);
+    } else {
+      int? limit = 10;
+      while (true) {
+        final rows = await od.matches(p.accountId, limit: limit);
+        rowsTotal += rows.length;
+        final before = added.length;
+        rows.forEach(take);
+        final allNew = rows.isNotEmpty && added.length - before == rows.length;
+        if (!allNew || limit == null || rows.length < limit) break;
+        limit = limit >= 250 ? null : limit * 5;
+      }
+    }
+    p.privateHistory = list.isEmpty && rowsTotal == 0;
+
+    // GPM/урон новых игр: если список матчей их не отдал — один лёгкий запрос последних 20 игр.
+    if (added.any((m) => m.gpm == null) && added.length <= 20) {
+      try {
+        for (final r in await od.recentMatches(p.accountId)) {
+          take(r, requireRanked: true);
+        }
+      } catch (_) {}
+    }
+    list.sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    // Профиль (ранг, ник, аватар): после новых игр (ранг мог смениться) или раз в 6 часов.
+    if (full || added.isNotEmpty || now - p.lastProfile > 6 * 3600) {
       try {
         final prof = await od.profile(p.accountId);
         final profile = (prof['profile'] as Map?) ?? {};
@@ -436,51 +494,31 @@ class Store extends ChangeNotifier {
         p.lastProfile = now;
       } catch (_) {}
     }
-    final rows = await od.matches(p.accountId, limit: (full || list.isEmpty) ? null : 60);
-    final added = <M>[];
-    for (final r in rows) {
-      if (r['match_id'] == null) continue;
-      final m = _fromListRow(r);
-      if (m.lobbyType != null && m.lobbyType != rankedLobby) continue;
-      final old = known[m.matchId];
-      if (old == null) {
-        list.add(m);
-        known[m.matchId] = m;
-        added.add(m);
-      } else {
-        _merge(old, m);
-      }
-    }
-    p.privateHistory = list.isEmpty && rows.isEmpty;
-    // последние ~20 игр с GPM/уроном одним запросом
-    try {
-      final recent = await od.recentMatches(p.accountId);
-      for (final r in recent) {
-        if ((r['lobby_type'] as num?)?.toInt() != rankedLobby) continue;
-        final m = _fromListRow(r);
-        final old = known[m.matchId];
-        if (old == null) {
-          list.add(m);
-          known[m.matchId] = m;
-          added.add(m);
-        } else {
-          _merge(old, m);
-        }
-      }
-    } catch (_) {}
-    list.sort((a, b) => a.startTime.compareTo(b.startTime));
+
     p.lastRefresh = now;
     if (enrich) {
-      await _enrich(p, budget: od.apiKey.isEmpty ? 6 : 25);
-      await _enrichStratz(p);
+      // В режиме экономии подробности догружаются только для новых игр.
+      final budget = settings.dataSaver ? added.length.clamp(0, 3) : (od.apiKey.isEmpty ? 6 : 25);
+      if (budget > 0) await _enrich(p, budget: budget);
+      if (!settings.dataSaver || added.isNotEmpty) await _enrichStratz(p);
     }
-    await _saveMatches(p.accountId);
+    if (added.isNotEmpty || enrich) await _saveMatches(p.accountId);
     if (events != null) {
       for (final m in added) {
         events.add(StoreEvent('match', p, match: m));
       }
     }
     return added;
+  }
+
+  /// Как часто опрашивать игрока: только что играл — каждые 3 мин; играл за 2 дня — раз в 20 мин; давно — раз в час.
+  int pollInterval(Player p) {
+    final ms = matchesOf(p);
+    if (ms.isEmpty) return 3600;
+    final since = nowTs() - ms.last.endTime;
+    if (since < 3 * 3600) return 180;
+    if (since < 2 * 86400) return 20 * 60;
+    return 3600;
   }
 
   /// Догрузка подробностей /matches/{id}: нетворс, бенчмарки → перф, предметы, стаки, шард.
@@ -491,7 +529,7 @@ class Store extends ChangeNotifier {
     for (final m in queue.take(budget)) {
       if (!od.backgroundAllowed) break;
       try {
-        final raw = await od.match(m.matchId);
+        final raw = await fetchMatch(m.matchId);
         applyMatchDetail(m, raw, p.accountId);
       } catch (_) {
         break;
@@ -622,7 +660,7 @@ class Store extends ChangeNotifier {
       unawaited(RefData.I.refreshIfStale(od, dir).catchError((_) {}));
       for (var i = 0; i < players.length; i++) {
         final p = players[i];
-        if (!force && nowTs() - p.lastRefresh < 180) continue; // свежее 3 минут — не дёргаем
+        if (!force && nowTs() - p.lastRefresh < pollInterval(p)) continue; // давно не играл — опрашиваем реже
         progress = '${p.name} (${i + 1}/${players.length})';
         notifyListeners();
         try {
@@ -648,8 +686,77 @@ class Store extends ChangeNotifier {
     return events;
   }
 
-  /// Подробный матч для экрана матча.
-  Future<Map<String, dynamic>> fetchMatch(int matchId) => od.match(matchId);
+  /// Подробный матч: сначала дисковый кэш (завершённый и разобранный матч не меняется), потом сеть.
+  Future<Map<String, dynamic>> fetchMatch(int matchId, {bool force = false}) async {
+    final f = File('$dir/mcache/$matchId.json');
+    if (!force) {
+      try {
+        if (await f.exists()) return Map<String, dynamic>.from(jsonDecode(await f.readAsString()) as Map);
+      } catch (_) {}
+    }
+    final raw = await od.match(matchId);
+    final players = raw['players'] as List?;
+    if (players != null && players.isNotEmpty) {
+      final start = (raw['start_time'] as num?)?.toInt() ?? 0;
+      final parsed = raw['version'] != null;
+      // кэшируем, если матч разобран или прошло больше суток (разбора уже не будет)
+      if (parsed || nowTs() - start > 86400) {
+        try {
+          await f.parent.create(recursive: true);
+          await f.writeAsString(jsonEncode(_compactMatch(raw)));
+          _trimMatchCache();
+        } catch (_) {}
+      }
+    }
+    return raw;
+  }
+
+  static const _matchKeys = [
+    'match_id', 'radiant_win', 'radiant_score', 'dire_score', 'duration', 'start_time', 'lobby_type', 'version',
+  ];
+  static const _playerKeys = [
+    'account_id', 'personaname', 'name', 'hero_id', 'player_slot', 'isRadiant', 'kills', 'deaths', 'assists', 'level',
+    'net_worth', 'last_hits', 'denies', 'gold_per_min', 'xp_per_min', 'hero_damage', 'tower_damage', 'hero_healing',
+    'rank_tier', 'item_0', 'item_1', 'item_2', 'item_3', 'item_4', 'item_5', 'item_neutral', 'aghanims_scepter',
+    'aghanims_shard', 'party_id', 'party_size', 'camps_stacked',
+  ];
+
+  /// Из ответа /matches (сотни КБ у разобранных матчей) оставляем только нужное экрану и статистике.
+  static Map<String, dynamic> _compactMatch(Map<String, dynamic> raw) {
+    final out = <String, dynamic>{for (final k in _matchKeys) if (raw[k] != null) k: raw[k]};
+    out['players'] = [
+      for (final p in (raw['players'] as List).whereType<Map>())
+        {
+          for (final k in _playerKeys) if (p[k] != null) k: p[k],
+          if (p['benchmarks'] is Map)
+            'benchmarks': {
+              for (final e in (p['benchmarks'] as Map).entries)
+                e.key: {'pct': e.value is Map ? e.value['pct'] : e.value}
+            },
+          if (p['purchase_log'] is List)
+            'purchase_log': [
+              for (final e in (p['purchase_log'] as List).whereType<Map>())
+                if (e['key'] == 'aghanims_shard' || e['key'] == 'ultimate_scepter') {'key': e['key'], 'time': e['time']}
+            ],
+        }
+    ];
+    return out;
+  }
+
+  int _trimCounter = 0;
+  void _trimMatchCache() {
+    if (++_trimCounter % 20 != 0) return;
+    () async {
+      try {
+        final files = (await Directory('$dir/mcache').list().toList()).whereType<File>().toList();
+        if (files.length <= 400) return;
+        files.sort((a, b) => a.statSync().modified.compareTo(b.statSync().modified));
+        for (final f in files.take(files.length - 400)) {
+          await f.delete();
+        }
+      } catch (_) {}
+    }();
+  }
 
   // --- сезоны -----------------------------------------------------------------------------------------
 

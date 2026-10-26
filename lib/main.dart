@@ -25,7 +25,7 @@ Future<void> main() async {
   };
   await Notifier.init();
   await Background.init();
-  await Background.schedule(store.settings.pollMinutes);
+  await Background.schedule(store.settings.pollMinutes, wifiOnly: store.settings.bgWifiOnly);
   runApp(ChangeNotifierProvider.value(value: store, child: const DotaPartyApp()));
   Future.delayed(const Duration(seconds: 2), Notifier.requestPermission);
 }

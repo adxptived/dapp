@@ -31,22 +31,27 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: gradient == null ? color : null,
-        gradient: gradient ??
-            (color == C.surface
-                ? const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF221F2B), C.surface],
-                  )
-                : null),
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+    final br = BorderRadius.circular(radius);
+    final translucent = gradient == null && color == C.surface;
+    final card = CustomPaint(
+      foregroundPainter: GlassEdgePainter(br, strength: translucent ? 0.9 : 0.6),
+      child: Container(
+        padding: padding,
+        decoration: BoxDecoration(
+          color: translucent ? null : (gradient == null ? color : null),
+          gradient: gradient ??
+              (translucent
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [const Color(0xFF2A2536).withValues(alpha: 0.62), C.surface.withValues(alpha: 0.72)],
+                    )
+                  : null),
+          borderRadius: br,
+          boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 24, offset: Offset(0, 10))],
+        ),
+        child: child,
       ),
-      child: child,
     );
     return onTap == null ? card : Pressable(onTap: onTap, scale: 0.975, child: card);
   }
@@ -73,8 +78,8 @@ class CircleBtn extends StatelessWidget {
             height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: filled ? C.lime : (color ?? C.surface2),
-              border: filled ? null : Border.all(color: Colors.white.withValues(alpha: 0.07)),
+              color: filled ? C.lime : (color ?? C.glass),
+              border: filled ? null : Border.all(color: Colors.white.withValues(alpha: 0.12)),
               boxShadow: filled ? [BoxShadow(color: C.lime.withValues(alpha: 0.35), blurRadius: 18, spreadRadius: -4)] : null,
             ),
             child: Center(child: iconW),
@@ -138,7 +143,7 @@ class HeroIcon extends StatelessWidget {
     final ph = Container(width: w, height: height, color: C.surface3);
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: h == null ? ph : NetImage(portrait ? h.image : h.icon, width: w, height: height, placeholder: ph),
+      child: h == null ? ph : NetImage(portrait && !RefData.I.lowData ? h.image : h.icon, width: w, height: height, placeholder: ph),
     );
   }
 }
@@ -240,9 +245,9 @@ class LimeButton extends StatelessWidget {
         width: double.infinity,
         height: 54,
         decoration: BoxDecoration(
-          color: dark ? C.surface2 : C.lime,
+          color: dark ? C.glass : C.lime,
           borderRadius: BorderRadius.circular(40),
-          border: dark ? Border.all(color: Colors.white.withValues(alpha: 0.08)) : null,
+          border: dark ? Border.all(color: Colors.white.withValues(alpha: 0.14)) : null,
           boxShadow: dark || onTap == null ? null : [BoxShadow(color: C.lime.withValues(alpha: 0.28), blurRadius: 24, spreadRadius: -6, offset: const Offset(0, 8))],
         ),
         child: Center(
@@ -273,9 +278,9 @@ class SmallPill extends StatelessWidget {
       duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: lime ? C.lime : C.surface2,
+        color: lime ? C.lime : C.glass,
         borderRadius: BorderRadius.circular(30),
-        border: lime ? null : Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: lime ? null : Border.all(color: Colors.white.withValues(alpha: 0.10)),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Text(text, style: T.small.copyWith(color: lime ? C.onLime : C.text, fontWeight: FontWeight.w600)),
@@ -304,9 +309,9 @@ class DropChip<V> extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: C.surface,
+          color: C.glass,
           borderRadius: BorderRadius.circular(rInner),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Text('$label: ', style: T.tiny),
@@ -337,9 +342,9 @@ class Segments<V> extends StatelessWidget {
       height: 44,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: C.surface,
+        color: C.glass2,
         borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
       child: LayoutBuilder(builder: (context, box) {
         final w = box.maxWidth / keys.length;
@@ -390,7 +395,7 @@ class KvTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: C.surface2, borderRadius: BorderRadius.circular(rInner)),
+      decoration: BoxDecoration(color: C.glass2, borderRadius: BorderRadius.circular(rInner)),
       child: Column(children: [
         if (headLeft != null)
           _row(Text(headLeft!, style: T.small.copyWith(color: C.text, fontWeight: FontWeight.w700)),
@@ -404,7 +409,7 @@ class KvTable extends StatelessWidget {
 
   Widget _row(Widget l, Widget r, {bool divider = false}) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(border: divider ? const Border(bottom: BorderSide(color: C.bg, width: 1.5)) : null),
+        decoration: BoxDecoration(border: divider ? const Border(bottom: BorderSide(color: Color(0x14FFFFFF), width: 1)) : null),
         child: Row(children: [Expanded(flex: 5, child: l), Expanded(flex: 6, child: Align(alignment: Alignment.centerLeft, child: r))]),
       );
 }
@@ -927,19 +932,9 @@ class PageScaffold extends StatelessWidget {
       ],
     );
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Stack(children: [
-        const Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [C.glow, Color(0xFF1A1526), C.bg, C.bg],
-                stops: [0, 0.22, 0.5, 1],
-              ),
-            ),
-          ),
-        ),
+        const Positioned.fill(child: AuroraBackground()),
         Positioned.fill(
           child: onRefresh == null
               ? list
@@ -957,15 +952,16 @@ class PageScaffold extends StatelessWidget {
           top: 0,
           child: ClipRect(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
               child: Container(
                 padding: EdgeInsets.only(top: top),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [C.glow.withValues(alpha: 0.55), C.glow.withValues(alpha: 0.15)],
+                    colors: [C.bg.withValues(alpha: 0.35), C.bg.withValues(alpha: 0.10)],
                   ),
+                  border: const Border(bottom: BorderSide(color: Color(0x14FFFFFF))),
                 ),
                 child: SizedBox(
                   height: barH,

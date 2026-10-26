@@ -84,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(rCard), color: C.surface2),
       clipBehavior: Clip.antiAlias,
       child: Stack(fit: StackFit.expand, children: [
-        if (hero != null)
+        if (hero != null && !RefData.I.lowData)
           NetImage(hero.image, fit: BoxFit.cover, alignment: Alignment.topCenter)
         else
           Container(

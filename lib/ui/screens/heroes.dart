@@ -71,7 +71,7 @@ class _HeroesScreenState extends State<HeroesScreen> {
         padding: const EdgeInsets.only(bottom: 8),
         child: Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: C.surface, borderRadius: BorderRadius.circular(rInner)),
+          decoration: BoxDecoration(color: C.glass2, borderRadius: BorderRadius.circular(rInner), border: Border.all(color: C.glass)),
           child: Row(children: [
             lead ?? HeroIcon(h.heroId, height: 34),
             const SizedBox(width: 10),

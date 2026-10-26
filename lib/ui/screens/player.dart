@@ -11,6 +11,7 @@ import '../common.dart';
 import '../fx.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'duel.dart';
 import 'graph.dart';
 import 'matches_list.dart';
 import 'matchups.dart';
@@ -55,6 +56,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
         const SizedBox(height: 14),
         _stats(s),
         if (ss.length >= 2) ...[const SizedBox(height: 14), _power(s, cmp, ss.length)],
+        const SizedBox(height: 14),
+        _goal(context, store, s),
+        const SizedBox(height: 14),
+        _activity(s),
         const SizedBox(height: 14),
         _splits(s),
         SectionTitle('Топ героев', trailing: Text('пул: ${heroPool(s.window)}', style: T.small)),
@@ -164,6 +169,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       a(Icons.list_alt_rounded, 'Матчи', () => push(context, MatchesListScreen(accountId: p.accountId))),
       a(Icons.sports_kabaddi_outlined, 'Соперники', () => push(context, MatchupsScreen(accountId: p.accountId))),
       a(Icons.view_week_outlined, 'Позиции', () => push(context, RolesScreen(accountId: p.accountId))),
+      a(Icons.sports_mma_outlined, 'Дуэль', () => openDuel(context, a: p.accountId)),
       a(Icons.timeline_rounded, 'График', () => push(context, GraphScreen(accountId: p.accountId))),
     ]);
   }
@@ -195,6 +201,137 @@ class _PlayerScreenState extends State<PlayerScreen> {
             padding: const EdgeInsets.only(top: 8),
             child: Text('GPM/урон посчитаны по ${s.detailGames} из ${s.agg.games} игр — подробности догружаются фоном.', style: T.tiny),
           ),
+      ]),
+    );
+  }
+
+  /// Цель по MMR: прогресс от стартового значения, сколько осталось и сколько это побед.
+  Widget _goal(BuildContext context, Store store, PlayerSummary s) {
+    final p = s.player;
+    final cur = s.currentMmr;
+    final goal = p.goalMmr;
+    Future<void> setGoal() async {
+      final v = await prompt(context, 'Цель по MMR', initial: goal?.toString(), hint: cur == null ? 'например 4000' : 'сейчас ≈$cur',
+          keyboard: TextInputType.number);
+      if (v == null) return;
+      final n = int.tryParse(v.trim());
+      await store.setGoal(p, (n == null || n <= 0) ? null : n);
+    }
+
+    if (goal == null || cur == null) {
+      return AppCard(
+        onTap: cur == null ? () => _setMmr(context, store, p) : setGoal,
+        child: Row(children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(color: C.lime.withValues(alpha: 0.15), shape: BoxShape.circle),
+            child: const Icon(Icons.flag_rounded, color: C.lime),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Цель по MMR', style: T.sub),
+              Text(cur == null ? 'сначала задайте текущий MMR' : 'поставьте цель — покажем прогресс и сколько побед осталось',
+                  style: T.small),
+            ]),
+          ),
+          const Icon(Icons.add_rounded, color: C.lime),
+        ]),
+      );
+    }
+    final start = s.ledger.start ?? cur;
+    final span = (goal - start).abs();
+    final done = span == 0 ? 1.0 : ((cur - start) / (goal - start)).clamp(0.0, 1.0);
+    final left = goal - cur;
+    final step = store.settings.mmrStep;
+    final wins = left <= 0 ? 0 : (left / step).ceil();
+    return AppCard(
+      onTap: setGoal,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Цель по MMR', style: T.sub),
+              Text('цель: $goal · старт: $start', style: T.small),
+            ]),
+          ),
+          CircleBtn(Icons.edit_rounded, size: 38, onTap: setGoal),
+        ]),
+        const SizedBox(height: 10),
+        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          AnimatedNumber(done * 100, style: T.display, format: (v) => '${v.round()}%'),
+        ]),
+        const SizedBox(height: 10),
+        BarMeter(done, bars: 36),
+        const SizedBox(height: 10),
+        Text(
+          left <= 0
+              ? 'Цель достигнута! 🎉 Поставьте новую.'
+              : 'Осталось $left MMR — это $wins ${plural(wins, 'чистая победа', 'чистые победы', 'чистых побед').split(' ').skip(1).join(' ')} подряд.',
+          style: T.small.copyWith(color: C.text),
+        ),
+      ]),
+    );
+  }
+
+  /// Календарь активности за 12 недель: насыщенность — сколько игр, цвет — в плюсе или в минусе день.
+  Widget _activity(PlayerSummary s) {
+    final today = DateTime.now();
+    final start = DateTime(today.year, today.month, today.day).subtract(Duration(days: 7 * 12 - 1 + (today.weekday - 1)));
+    final days = <int, (int, int)>{};
+    for (final m in s.all) {
+      final d = DateTime.fromMillisecondsSinceEpoch(m.startTime * 1000);
+      if (d.isBefore(start)) continue;
+      final k = DateTime(d.year, d.month, d.day).difference(start).inDays;
+      final v = days[k] ?? (0, 0);
+      days[k] = (v.$1 + 1, v.$2 + (m.won ? 1 : 0));
+    }
+    final total = days.values.fold<int>(0, (a, v) => a + v.$1);
+    final active = days.length;
+    final maxG = days.values.fold<int>(1, (a, v) => v.$1 > a ? v.$1 : a);
+    final weeks = 12 + (today.weekday == 7 ? 0 : 1);
+    return AppCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(child: Text('Активность', style: T.sub)),
+          Text('$total игр · $active дн. за 12 недель', style: T.small),
+        ]),
+        const SizedBox(height: 12),
+        LayoutBuilder(builder: (context, box) {
+          final cell = ((box.maxWidth - 24) / weeks).clamp(8.0, 22.0);
+          return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Column(children: [
+              for (final d in const ['пн', '', 'ср', '', 'пт', '', 'вс'])
+                SizedBox(height: cell, width: 22, child: Text(d, style: T.tiny.copyWith(fontSize: 8))),
+            ]),
+            for (var w = 0; w < weeks; w++)
+              Column(children: [
+                for (var d = 0; d < 7; d++)
+                  Builder(builder: (_) {
+                    final k = w * 7 + d;
+                    final date = start.add(Duration(days: k));
+                    if (date.isAfter(today)) return SizedBox(width: cell, height: cell);
+                    final v = days[k];
+                    final Color color;
+                    if (v == null) {
+                      color = C.glass;
+                    } else {
+                      final t = 0.35 + 0.65 * (v.$1 / maxG);
+                      color = (v.$2 * 2 >= v.$1 ? C.lime : C.red).withValues(alpha: t);
+                    }
+                    return Container(
+                      width: cell - 3,
+                      height: cell - 3,
+                      margin: const EdgeInsets.all(1.5),
+                      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
+                    );
+                  }),
+              ]),
+          ]);
+        }),
+        const SizedBox(height: 8),
+        Text('Фиолетовый — день в плюсе, красный — в минусе; ярче — больше игр.', style: T.tiny),
       ]),
     );
   }
@@ -298,7 +435,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       onTap: () => openMatch(context, m.matchId, accountId: p.accountId),
       child: Container(
         padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: C.surface2, borderRadius: BorderRadius.circular(rInner)),
+        decoration: BoxDecoration(color: C.glass2, borderRadius: BorderRadius.circular(rInner), border: Border.all(color: C.glass)),
         child: Row(children: [
           Container(width: 4, height: 34, decoration: BoxDecoration(color: m.won ? C.lime : C.red, borderRadius: BorderRadius.circular(2))),
           const SizedBox(width: 10),

@@ -89,7 +89,7 @@ class _TogetherScreenState extends State<TogetherScreen> {
             padding: const EdgeInsets.only(bottom: 6),
             child: Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: C.surface, borderRadius: BorderRadius.circular(rInner)),
+              decoration: BoxDecoration(color: C.glass2, borderRadius: BorderRadius.circular(rInner), border: Border.all(color: C.glass)),
               child: Row(children: [
                 Expanded(child: Text('${named[p.a].$1} + ${named[p.b].$1}', style: T.body.copyWith(fontWeight: FontWeight.w700))),
                 Text('${p.games} · ', style: T.small),

@@ -29,6 +29,7 @@ class Player {
   int lastProfile; // unix, последнее обновление профиля
   int? lastNotifiedMatch; // последний матч, о котором уже сообщили
   bool privateHistory; // OpenDota не видит матчи
+  int? goalMmr; // цель по MMR
 
   Player({
     required this.accountId,
@@ -45,6 +46,7 @@ class Player {
     this.lastProfile = 0,
     this.lastNotifiedMatch,
     this.privateHistory = false,
+    this.goalMmr,
   }) : anchors = anchors ?? [];
 
   Map<String, dynamic> toJson() => {
@@ -62,6 +64,7 @@ class Player {
         'last_profile': lastProfile,
         'last_notified_match': lastNotifiedMatch,
         'private_history': privateHistory,
+        'goal_mmr': goalMmr,
       };
 
   factory Player.fromJson(Map<String, dynamic> j) => Player(
@@ -82,6 +85,7 @@ class Player {
         lastProfile: _int(j['last_profile']) ?? 0,
         lastNotifiedMatch: _int(j['last_notified_match']),
         privateHistory: _bool(j['private_history']) ?? false,
+        goalMmr: _int(j['goal_mmr']),
       );
 }
 
@@ -264,6 +268,8 @@ class Settings {
   String githubToken;
   String updateRepo;
   String defaultPeriod; // day/week/month/year/all
+  bool dataSaver; // экономия трафика
+  bool bgWifiOnly; // фоновая проверка только по Wi-Fi
   int lastDigestDay; // yyyymmdd
   int lastWeeklyDay;
   Map<String, String> leaders; // номинация → лидер (для объявлений о смене лидера)
@@ -287,6 +293,8 @@ class Settings {
     this.githubToken = '',
     this.updateRepo = 'adxptived/dotapp',
     this.defaultPeriod = 'week',
+    this.dataSaver = false,
+    this.bgWifiOnly = false,
     this.lastDigestDay = 0,
     this.lastWeeklyDay = 0,
     Map<String, String>? leaders,
@@ -311,6 +319,8 @@ class Settings {
         'github_token': githubToken,
         'update_repo': updateRepo,
         'default_period': defaultPeriod,
+        'data_saver': dataSaver,
+        'bg_wifi_only': bgWifiOnly,
         'last_digest_day': lastDigestDay,
         'last_weekly_day': lastWeeklyDay,
         'leaders': leaders,
@@ -337,6 +347,8 @@ class Settings {
       githubToken: (j['github_token'] ?? '').toString(),
       updateRepo: (j['update_repo'] ?? d.updateRepo).toString(),
       defaultPeriod: (j['default_period'] ?? d.defaultPeriod).toString(),
+      dataSaver: _bool(j['data_saver']) ?? false,
+      bgWifiOnly: _bool(j['bg_wifi_only']) ?? false,
       lastDigestDay: _int(j['last_digest_day']) ?? 0,
       lastWeeklyDay: _int(j['last_weekly_day']) ?? 0,
       leaders: j['leaders'] is Map

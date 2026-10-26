@@ -48,13 +48,13 @@ class Background {
     } catch (_) {}
   }
 
-  static Future<void> schedule(int minutes) async {
+  static Future<void> schedule(int minutes, {bool wifiOnly = false}) async {
     try {
       await Workmanager().registerPeriodicTask(
         _taskName,
         _taskName,
         frequency: Duration(minutes: minutes < 15 ? 15 : minutes),
-        constraints: Constraints(networkType: NetworkType.connected),
+        constraints: Constraints(networkType: wifiOnly ? NetworkType.unmetered : NetworkType.connected),
         existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
       );
     } catch (_) {}

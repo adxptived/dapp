@@ -157,7 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _pick<int>(Icons.timer_outlined, 'Проверять матчи', s.pollMinutes,
               const {15: 'каждые 15 мин', 30: 'каждые 30 мин', 60: 'раз в час', 180: 'раз в 3 часа'}, (v) async {
             await set(() => s.pollMinutes = v);
-            await Background.schedule(v);
+            await Background.schedule(v, wifiOnly: s.bgWifiOnly);
           }),
           _tile(Icons.notifications_active_outlined, 'Разрешить уведомления', 'системный запрос Android 13+',
               onTap: Notifier.requestPermission),
@@ -168,8 +168,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ]),
 
         // --- данные и кэш ---
-        const SectionTitle('Данные и кэш'),
+        const SectionTitle('Данные и трафик'),
         _group([
+          _switch(Icons.data_saver_on_rounded, 'Экономия трафика',
+              'меньше запросов, маленькие иконки, подробности — только для новых игр', s.dataSaver, (v) => set(() => s.dataSaver = v)),
+          _switch(Icons.wifi_rounded, 'Фоновая проверка только по Wi-Fi', 'на мобильном интернете — только в приложении', s.bgWifiOnly,
+              (v) async {
+            await set(() => s.bgWifiOnly = v);
+            await Background.schedule(s.pollMinutes, wifiOnly: v);
+          }),
+          _tile(Icons.swap_vert_circle_outlined, 'Трафик',
+              'сегодня ${_mb(Traffic.today)} · за 7 дней ${_mb(Traffic.lastDays(7))} · за 30 дней ${_mb(Traffic.lastDays(30))}'),
           _pick<int>(Icons.manage_history_rounded, 'Подробности матчей', s.enrichDays,
               const {30: 'за 30 дней', 90: 'за 90 дней', 180: 'за 180 дней', 365: 'за год'}, (v) => set(() => s.enrichDays = v)),
           _tile(
@@ -185,7 +194,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     setState(() => prefetching = true);
                     try {
                       await RefData.I.refreshIfStale(store.od, store.dir);
-                      final n = await ImageCache2.prefetch(RefData.I.heroes.values.expand((h) => [h.image, h.icon]));
+                      final n = await ImageCache2.prefetch(
+                          RefData.I.heroes.values.expand((h) => s.dataSaver ? [h.icon] : [h.image, h.icon]));
                       if (context.mounted) toast(context, 'Иконки героев в кэше: $n');
                     } catch (e) {
                       if (context.mounted) toast(context, '$e');
@@ -435,6 +445,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ]),
     );
   }
+
+  String _mb(int b) => b < 1024 * 1024 ? '${(b / 1024).toStringAsFixed(0)} КБ' : '${(b / 1024 / 1024).toStringAsFixed(1)} МБ';
 
   String _tail(String k) => k.length <= 4 ? k : k.substring(k.length - 4);
 

@@ -10,6 +10,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../data/api.dart';
 import '../data/store.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
@@ -95,6 +96,7 @@ class Updater {
       await for (final chunk in resp.stream) {
         sink.add(chunk);
         got += chunk.length;
+        Traffic.add(chunk.length);
         if (total > 0) onProgress(got / total);
       }
       await sink.close();

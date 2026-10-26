@@ -75,7 +75,7 @@ class _MatchesListScreenState extends State<MatchesListScreen> {
               onTap: () => openMatch(context, slice[i].matchId, accountId: p.accountId),
               child: Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: C.surface, borderRadius: BorderRadius.circular(rInner)),
+                decoration: BoxDecoration(color: C.glass2, borderRadius: BorderRadius.circular(rInner), border: Border.all(color: C.glass)),
                 child: Row(children: [
                   SizedBox(width: 30, child: Text('${all.length - page * per - i}', style: T.tiny)),
                   HeroIcon(slice[i].heroId, height: 28),

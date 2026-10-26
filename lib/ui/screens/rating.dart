@@ -191,7 +191,7 @@ class _RatingScreenState extends State<RatingScreen> {
         child: Container(
           margin: const EdgeInsets.only(right: 6),
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-          decoration: BoxDecoration(color: C.surface2, borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: C.glass, borderRadius: BorderRadius.circular(12)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(label, style: T.tiny),
             Text(value, style: T.body.copyWith(fontWeight: FontWeight.w700)),

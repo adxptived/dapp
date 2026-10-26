@@ -11,6 +11,7 @@ import 'package:dapp/ui/screens/add_player.dart';
 import 'package:dapp/ui/screens/compare.dart';
 import 'package:dapp/ui/screens/contest.dart';
 import 'package:dapp/ui/screens/digest.dart';
+import 'package:dapp/ui/screens/duel.dart';
 import 'package:dapp/ui/screens/go.dart';
 import 'package:dapp/ui/screens/graph.dart';
 import 'package:dapp/ui/screens/heroes.dart';
@@ -110,6 +111,7 @@ Store buildStore() {
         lastRefresh: now,
         lastProfile: now,
         isMe: p == 0,
+        goalMmr: p == 0 ? 4500 : null,
       ),
       ms,
     );
@@ -190,6 +192,7 @@ void main() {
   testWidgets('matches', (t) async => shot(t, '16_matches', const MatchesListScreen(accountId: 100001), height: tall));
   testWidgets('roles', (t) async => shot(t, '17_roles', const RolesScreen(), height: tall));
   testWidgets('status', (t) async => shot(t, '18_status', const StatusScreen()));
+  testWidgets('duel', (t) async => shot(t, '20_duel', const DuelScreen(), height: tall));
   testWidgets('add', (t) async => shot(t, '19_add', const AddPlayerScreen()));
 
   test('логика: рейтинг, награды, рекорды, матчапы', () {

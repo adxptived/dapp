@@ -58,14 +58,17 @@ def patch_manifest() -> None:
 def dark_launch() -> None:
     """Тёмный фон заставки вместо белой вспышки при запуске."""
     res = app / "src" / "main" / "res"
+    (res / "values").mkdir(parents=True, exist_ok=True)
+    (res / "values" / "dapp_colors.xml").write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="dapp_bg">#FF110F16</color>\n</resources>\n')
     for f in res.glob("drawable*/launch_background.xml"):
         t = f.read_text()
-        t = t.replace("@android:color/white", "#FF110F16").replace("?android:colorBackground", "#FF110F16")
+        t = t.replace("@android:color/white", "@color/dapp_bg").replace("?android:colorBackground", "@color/dapp_bg")
         f.write_text(t)
     for f in res.glob("values*/styles.xml"):
         t = f.read_text()
         t = t.replace('<item name="android:windowBackground">?android:colorBackground</item>',
-                      '<item name="android:windowBackground">#FF110F16</item>')
+                      '<item name="android:windowBackground">@color/dapp_bg</item>')
         f.write_text(t)
 
 

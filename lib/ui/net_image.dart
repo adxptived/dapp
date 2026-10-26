@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
+import '../data/api.dart';
+
 class ImageCache2 {
   static final _mem = LinkedHashMap<String, Uint8List>();
   static final _inflight = <String, Future<Uint8List?>>{};
@@ -91,6 +93,7 @@ class ImageCache2 {
         return null;
       }
       final b = r.bodyBytes;
+      Traffic.add(b.length);
       _remember(url, b);
       if (file != null) {
         try {

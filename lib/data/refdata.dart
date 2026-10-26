@@ -31,6 +31,7 @@ class RefData {
   final Map<int, HeroInfo> heroes = {};
   final Map<int, ItemInfo> items = {};
   int updated = 0;
+  bool lowData = false; // экономия трафика: маленькие иконки вместо портретов
 
   String heroName(int? id) => id == null ? '—' : (heroes[id]?.localized ?? 'Герой #$id');
   HeroInfo? hero(int? id) => id == null ? null : heroes[id];
@@ -93,7 +94,7 @@ class RefData {
 
   Future<void> refreshIfStale(OpenDota od, String dir, {bool force = false}) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    if (!force && heroes.isNotEmpty && items.isNotEmpty && now - updated < 7 * 86400) return;
+    if (!force && heroes.isNotEmpty && items.isNotEmpty && now - updated < 14 * 86400) return;
     final hs = await od.constants('heroes');
     final its = await od.constants('items');
     final heroRows = <List<dynamic>>[];

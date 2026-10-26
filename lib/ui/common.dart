@@ -56,7 +56,7 @@ class MatchTile extends StatelessWidget {
       onTap: () => openMatch(context, m.matchId, accountId: first.$1.accountId),
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: C.surface2, borderRadius: BorderRadius.circular(rInner)),
+        decoration: BoxDecoration(color: C.glass2, borderRadius: BorderRadius.circular(rInner), border: Border.all(color: C.glass)),
         child: Row(children: [
           Container(
             width: 4,

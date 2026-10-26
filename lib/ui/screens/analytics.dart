@@ -7,6 +7,7 @@ import '../common.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'compare.dart';
+import 'duel.dart';
 import 'contest.dart';
 import 'graph.dart';
 import 'heroes.dart';
@@ -185,6 +186,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget _grid(BuildContext context) {
     final items = [
       (Icons.compare_arrows_rounded, 'Сравнение', 'сила игроков', () => push(context, const CompareScreen())),
+      (Icons.sports_mma_outlined, 'Дуэль', 'двое лицом к лицу', () => push(context, const DuelScreen())),
       (Icons.people_alt_outlined, 'Вместе', 'пары и совместные', () => push(context, const TogetherScreen())),
       (Icons.local_fire_department_outlined, 'Герои', 'любимые и лучшие', () => push(context, const HeroesScreen())),
       (Icons.sports_kabaddi_outlined, 'Соперники', 'тяжёлые и удобные', () => push(context, const MatchupsScreen())),

@@ -45,7 +45,7 @@ class ShellState extends State<Shell> with WidgetsBindingObserver {
       // иконки героев — один раз на диск, дальше из кэша
       Future.delayed(const Duration(seconds: 4), () async {
         await RefData.I.refreshIfStale(store.od, store.dir).catchError((_) {});
-        await ImageCache2.prefetch(RefData.I.heroes.values.expand((h) => [h.image, h.icon]));
+        await ImageCache2.prefetch(RefData.I.heroes.values.expand((h) => RefData.I.lowData ? [h.icon] : [h.image, h.icon]));
       });
       if (store.settings.autoUpdateCheck && mounted) {
         await Updater.checkAndPrompt(context, store, silent: true);
@@ -146,8 +146,8 @@ class _BottomNav extends StatelessWidget {
         ),
         child: Glass(
           radius: BorderRadius.circular(40),
-          tint: 0.62,
-          blur: 26,
+          tint: 0.38,
+          blur: 30,
           child: SizedBox(
             height: 66,
             child: LayoutBuilder(builder: (context, box) {

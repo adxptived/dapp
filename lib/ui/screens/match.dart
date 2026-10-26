@@ -240,7 +240,7 @@ class _MatchScreenState extends State<MatchScreen> {
         child: Container(
           margin: const EdgeInsets.only(right: 4),
           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-          decoration: BoxDecoration(color: C.surface2, borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(color: C.glass, borderRadius: BorderRadius.circular(10)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(l, style: T.tiny.copyWith(fontSize: 9)),
             Text(v, style: T.small.copyWith(color: C.text, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),

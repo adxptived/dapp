@@ -14,6 +14,8 @@ class C {
   static const muted = Color(0xFF8E89A0);
   static const faint = Color(0xFF4A4558);
   static const red = Color(0xFFFF6B7A);
+  static const glass = Color(0x14FFFFFF); // полупрозрачная заливка строк на стекле
+  static const glass2 = Color(0x0CFFFFFF);
   static const win = Color(0xFF7EE0A1); // победа на графиках/плашках
   static const glow = Color(0xFF3B2D6B); // фиолетовое свечение сверху
   static const gold = Color(0xFFFFC94D);
@@ -93,12 +95,12 @@ ThemeData buildTheme() {
     focusColor: Colors.transparent,
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: C.surface2,
+      fillColor: const Color(0x12FFFFFF),
       hintStyle: const TextStyle(color: C.muted),
       labelStyle: const TextStyle(color: C.muted),
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(rInner), borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(rInner), borderSide: const BorderSide(color: C.stroke)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(rInner), borderSide: const BorderSide(color: Color(0x1FFFFFFF))),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(rInner), borderSide: const BorderSide(color: C.lime)),
     ),
     switchTheme: SwitchThemeData(

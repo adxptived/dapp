@@ -177,7 +177,7 @@ class _SearchScreenState extends State<SearchScreen> {
               onTap: () => openMatch(context, (m['match_id'] as num).toInt(), accountId: r.id),
               child: Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: C.surface, borderRadius: BorderRadius.circular(rInner)),
+                decoration: BoxDecoration(color: C.glass2, borderRadius: BorderRadius.circular(rInner), border: Border.all(color: C.glass)),
                 child: Row(children: [
                   HeroIcon((m['hero_id'] as num?)?.toInt(), height: 28),
                   const SizedBox(width: 10),
