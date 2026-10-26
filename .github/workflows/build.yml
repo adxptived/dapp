@@ -104,13 +104,14 @@ jobs:
           curl -sSL -o test/fonts/Manrope.ttf "https://github.com/google/fonts/raw/main/ofl/manrope/Manrope%5Bwght%5D.ttf" || true
           flutter pub get > /dev/null
           set +e
-          flutter test --update-goldens 2>&1 | tee test.log
+          flutter test --update-goldens test/screens_test.dart 2>&1 | tee test.log
+          flutter test test/net_image_test.dart 2>&1 | tee net.log
           echo "exit $?" >> test.log
           true
       - name: Скриншоты → ветка ci-shots
         if: always()
         run: |
-          mkdir -p /tmp/shots && cp test.log /tmp/shots/ || true
+          mkdir -p /tmp/shots && cp test.log net.log /tmp/shots/ || true
           cp test/shots/*.png /tmp/shots/ 2>/dev/null || true
           cp test/failures/*.png /tmp/shots/ 2>/dev/null || true
           cd /tmp/shots
