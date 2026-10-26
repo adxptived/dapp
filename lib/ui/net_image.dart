@@ -88,7 +88,11 @@ class ImageCache2 {
     if (hit != null) return Future.value(hit);
     final f = _failed[url];
     if (f != null && DateTime.now().difference(f).inSeconds < 8) return Future.value(null);
-    return _inflight.putIfAbsent(url, () => _load(url).whenComplete(() => _inflight.remove(url)));
+    // ВАЖНО: колбэк ничего не возвращает. Стрелка `=> _inflight.remove(url)` вернула бы эту же загрузку,
+    // и whenComplete ждал бы сам себя — картинка скачивалась, но так и не доходила до экрана.
+    return _inflight.putIfAbsent(url, () => _load(url).whenComplete(() {
+          _inflight.remove(url);
+        }));
   }
 
   static Future<Uint8List?> _load(String url) async {
