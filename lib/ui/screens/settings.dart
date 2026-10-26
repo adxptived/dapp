@@ -270,11 +270,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _import(BuildContext context, Store store) async {
     try {
-      final r = await FilePicker.pickFiles(type: FileType.any, withData: true);
-      final f = r?.files.single;
-      if (f == null) return;
-      final data = f.bytes ?? (f.path != null ? await File(f.path!).readAsBytes() : null);
-      if (data == null) return;
+      final files = await FilePicker.pickFiles(type: FileType.any);
+      if (files.isEmpty) return;
+      final path = files.first.path;
+      if (path == null) return;
+      final data = await File(path).readAsBytes();
       final j = jsonDecode(utf8.decode(data)) as Map<String, dynamic>;
       if (!context.mounted) return;
       if (!await confirm(context, 'Восстановить?', 'Текущие данные будут заменены данными из файла.', ok: 'Восстановить')) return;

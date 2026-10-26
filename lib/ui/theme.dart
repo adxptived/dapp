@@ -60,12 +60,11 @@ class T {
 
 ThemeData buildTheme() {
   final base = ThemeData(brightness: Brightness.dark, useMaterial3: true);
-  TextTheme tt;
+  String? family;
   try {
-    tt = GoogleFonts.manropeTextTheme(base.textTheme);
-  } catch (_) {
-    tt = base.textTheme;
-  }
+    family = GoogleFonts.manrope().fontFamily;
+  } catch (_) {}
+  final tt = base.textTheme.apply(fontFamily: family);
   return base.copyWith(
     scaffoldBackgroundColor: C.bg,
     colorScheme: const ColorScheme.dark(
@@ -110,9 +109,5 @@ ThemeData buildTheme() {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(rCard))),
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(color: C.lime),
-    pageTransitionsTheme: const PageTransitionsTheme(builders: {
-      TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-    }),
   );
 }
