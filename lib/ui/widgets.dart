@@ -31,27 +31,15 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final br = BorderRadius.circular(radius);
-    final translucent = gradient == null && color == C.surface;
-    final card = CustomPaint(
-      foregroundPainter: GlassEdgePainter(br, strength: translucent ? 0.9 : 0.6),
-      child: Container(
-        padding: padding,
-        decoration: BoxDecoration(
-          color: translucent ? null : (gradient == null ? color : null),
-          gradient: gradient ??
-              (translucent
-                  ? LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [const Color(0xFF2A2536).withValues(alpha: 0.62), C.surface.withValues(alpha: 0.72)],
-                    )
-                  : null),
-          borderRadius: br,
-          boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 24, offset: Offset(0, 10))],
-        ),
-        child: child,
+    final card = Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: gradient == null ? color : null,
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
+      child: child,
     );
     return onTap == null ? card : Pressable(onTap: onTap, scale: 0.975, child: card);
   }
@@ -78,7 +66,7 @@ class CircleBtn extends StatelessWidget {
             height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: filled ? C.lime : (color ?? C.glass),
+              color: filled ? C.lime : (color ?? C.surface2),
               border: filled ? null : Border.all(color: Colors.white.withValues(alpha: 0.12)),
               boxShadow: filled ? [BoxShadow(color: C.lime.withValues(alpha: 0.35), blurRadius: 18, spreadRadius: -4)] : null,
             ),
@@ -211,7 +199,7 @@ class TopBar extends StatelessWidget {
       child: Row(children: [
         if (leading != null || canPop)
           CircleBtn(leading ?? Icons.arrow_back_ios_new_rounded,
-              glass: true, onTap: onLeading ?? (canPop ? () => Navigator.of(context).pop() : null))
+              onTap: onLeading ?? (canPop ? () => Navigator.of(context).pop() : null))
         else
           const SizedBox(width: 46),
         Expanded(
@@ -245,7 +233,7 @@ class LimeButton extends StatelessWidget {
         width: double.infinity,
         height: 54,
         decoration: BoxDecoration(
-          color: dark ? C.glass : C.lime,
+          color: dark ? C.surface2 : C.lime,
           borderRadius: BorderRadius.circular(40),
           border: dark ? Border.all(color: Colors.white.withValues(alpha: 0.14)) : null,
           boxShadow: dark || onTap == null ? null : [BoxShadow(color: C.lime.withValues(alpha: 0.28), blurRadius: 24, spreadRadius: -6, offset: const Offset(0, 8))],
@@ -996,7 +984,18 @@ class PageScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(children: [
-        const Positioned.fill(child: AuroraBackground()),
+        const Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [C.glow, Color(0xFF1A1526), C.bg, C.bg],
+                stops: [0, 0.25, 0.55, 1],
+              ),
+            ),
+          ),
+        ),
         Positioned.fill(
           child: onRefresh == null
               ? list
@@ -1012,26 +1011,20 @@ class PageScaffold extends StatelessWidget {
           left: 0,
           right: 0,
           top: 0,
-          child: ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-              child: Container(
+          child: Container(
                 padding: EdgeInsets.only(top: top),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [C.bg.withValues(alpha: 0.35), C.bg.withValues(alpha: 0.10)],
+                    colors: [C.glow, Color(0xF2271E40)],
                   ),
-                  border: const Border(bottom: BorderSide(color: Color(0x14FFFFFF))),
                 ),
                 child: SizedBox(
                   height: barH,
                   child: TopBar(title: title, trailing: trailing, leading: leading, onLeading: onLeading),
                 ),
               ),
-            ),
-          ),
         ),
       ]),
     );

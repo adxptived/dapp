@@ -309,10 +309,12 @@ Future<T?> showGlassSheet<T>(BuildContext context, Widget Function(BuildContext)
       padding: EdgeInsets.fromLTRB(10, 0, 10, MediaQuery.of(c).viewInsets.bottom + 10),
       child: SafeArea(
         top: false,
-        child: Glass(
-          tint: 0.82,
-          color: C.surface,
-          radius: BorderRadius.circular(30),
+        child: Container(
+          decoration: BoxDecoration(
+            color: C.surface,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+          ),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             const SizedBox(height: 10),
             Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),

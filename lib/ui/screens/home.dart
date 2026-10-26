@@ -109,9 +109,8 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Glass(
-                radius: BorderRadius.circular(20),
-                tint: 0.3,
+              Container(
+                decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(20)),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 child: Text('Сегодня · ${d.day} ${monthShort(d.month)}', style: T.tiny.copyWith(color: Colors.white, fontSize: 11)),
               ),

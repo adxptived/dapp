@@ -142,12 +142,13 @@ class _BottomNav extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(40),
-          boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 30, offset: Offset(0, 10))],
+          boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 28, offset: Offset(0, 12))],
         ),
         child: Glass(
           radius: BorderRadius.circular(40),
-          tint: 0.38,
-          blur: 30,
+          color: Colors.white,
+          tint: 0.10,
+          blur: 18,
           child: SizedBox(
             height: 66,
             child: LayoutBuilder(builder: (context, box) {
@@ -156,16 +157,15 @@ class _BottomNav extends StatelessWidget {
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 380),
                   curve: Curves.easeOutBack,
-                  left: 8 + w * index + (w - 50) / 2,
-                  top: 8,
-                  width: 50,
-                  height: 50,
+                  left: 8 + w * index + (w - 18) / 2,
+                  bottom: 9,
+                  width: 18,
+                  height: 4,
                   child: Container(
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.10),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-                      boxShadow: [BoxShadow(color: C.lime.withValues(alpha: 0.18), blurRadius: 18, spreadRadius: -6)],
+                      color: C.lime,
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: [BoxShadow(color: C.lime.withValues(alpha: 0.6), blurRadius: 8)],
                     ),
                   ),
                 ),
@@ -189,8 +189,8 @@ class _BottomNav extends StatelessWidget {
                                   child: Icon(
                                     i == index ? _icons[i].$2 : _icons[i].$1,
                                     key: ValueKey(i == index),
-                                    color: i == index ? C.lime : C.muted,
-                                    size: 23,
+                                    color: i == index ? C.lime : Colors.white.withValues(alpha: 0.85),
+                                    size: 25,
                                   ),
                                 ),
                               ),
