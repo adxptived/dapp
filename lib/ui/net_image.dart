@@ -27,7 +27,9 @@ class ImageCache2 {
 
   /// Один раз при запуске: папка кэша и список скачанного.
   static Future<void> init() => _init ??= () async {
+        _d('init: cacheDir');
         final d = await _cacheDir();
+        _d('init: cacheDir=${d?.path}');
         if (d == null) return;
         try {
           await for (final f in d.list()) {
@@ -90,7 +92,9 @@ class ImageCache2 {
   }
 
   static Future<Uint8List?> _load(String url) async {
+    _d('load $url: init');
     await init();
+    _d('load $url: init ok dir=${_dir?.path} onDisk=${_onDisk.length}');
     final dir = _dir;
     final name = _name(url);
     final file = dir == null ? null : File('${dir.path}/$name');
@@ -104,13 +108,17 @@ class ImageCache2 {
       }
     } catch (_) {}
     if (offline) return null;
+    _d('load $url: slot (active=$_active queue=${_queue.length})');
     await _slot();
+    _d('load $url: slot ok');
     try {
       // несколько попыток и запасные адреса Steam CDN: если один домен режется сетью/VPN, берём другой
       for (var attempt = 0; attempt < 3; attempt++) {
         for (final u in _mirrors(url)) {
           try {
+            _d('get $u');
             final r = await _client.get(Uri.parse(u), headers: const {'User-Agent': 'Mozilla/5.0 dapp'}).timeout(const Duration(seconds: 15));
+            _d('got ${r.statusCode} ${r.bodyBytes.length} $u');
             if (r.statusCode == 404) continue;
             if (r.statusCode != 200 || r.bodyBytes.isEmpty) {
               lastError = 'HTTP ${r.statusCode} · ${Uri.parse(u).host}';
@@ -128,6 +136,7 @@ class ImageCache2 {
             okCount++;
             return b;
           } catch (e) {
+            _d('fail $u: $e');
             lastError = '${e.runtimeType}: ${'$e'.split('\n').first} · ${Uri.parse(u).host}';
             _resetClient();
           }
@@ -151,6 +160,8 @@ class ImageCache2 {
   }
 
   static String? lastError;
+  static void Function(String)? debug; // диагностика: пошаговый лог
+  static void _d(String m) => debug?.call(m);
   static bool offline = false; // тесты: без сети
   static int okCount = 0, failCount = 0;
 
