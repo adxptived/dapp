@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../data/refdata.dart';
 import '../data/store.dart';
 import '../services/updater.dart';
 import 'screens/analytics.dart';
@@ -8,6 +9,8 @@ import 'screens/home.dart';
 import 'screens/rating.dart';
 import 'screens/search.dart';
 import 'screens/settings.dart';
+import 'fx.dart';
+import 'net_image.dart';
 import 'theme.dart';
 
 class Shell extends StatefulWidget {
@@ -39,6 +42,11 @@ class ShellState extends State<Shell> with WidgetsBindingObserver {
       final store = context.read<Store>();
       store.autoBackup();
       if (store.players.isNotEmpty) store.refreshAll();
+      // иконки героев — один раз на диск, дальше из кэша
+      Future.delayed(const Duration(seconds: 4), () async {
+        await RefData.I.refreshIfStale(store.od, store.dir).catchError((_) {});
+        await ImageCache2.prefetch(RefData.I.heroes.values.expand((h) => [h.image, h.icon]));
+      });
       if (store.settings.autoUpdateCheck && mounted) {
         await Updater.checkAndPrompt(context, store, silent: true);
       }
@@ -61,13 +69,23 @@ class ShellState extends State<Shell> with WidgetsBindingObserver {
     }
   }
 
-  Widget _tab(int i, Widget root) => Offstage(
-        offstage: index != i,
-        child: TickerMode(
-          enabled: index == i,
-          child: Navigator(
-            key: _navKeys[i],
-            onGenerateRoute: (s) => MaterialPageRoute(builder: (_) => root, settings: s),
+  Widget _tab(int i, Widget root) => IgnorePointer(
+        ignoring: index != i,
+        child: AnimatedOpacity(
+          opacity: index == i ? 1 : 0,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          child: AnimatedSlide(
+            offset: index == i ? Offset.zero : const Offset(0, 0.015),
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            child: TickerMode(
+              enabled: index == i,
+              child: Navigator(
+                key: _navKeys[i],
+                onGenerateRoute: (s) => MaterialPageRoute(builder: (_) => root, settings: s),
+              ),
+            ),
           ),
         ),
       );
@@ -97,6 +115,7 @@ class ShellState extends State<Shell> with WidgetsBindingObserver {
           _tab(4, const SettingsScreen()),
         ]),
         bottomNavigationBar: _BottomNav(index: index, onTap: go),
+        backgroundColor: C.bg,
       ),
     );
   }
@@ -119,37 +138,72 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).padding.bottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(32, 0, 32, bottom + 12),
-      child: Container(
-        height: 64,
+      padding: EdgeInsets.fromLTRB(28, 0, 28, bottom + 12),
+      child: DecoratedBox(
         decoration: BoxDecoration(
-          color: C.surface.withValues(alpha: 0.96),
           borderRadius: BorderRadius.circular(40),
-          border: Border.all(color: C.stroke),
-          boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 24, offset: Offset(0, 8))],
+          boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 30, offset: Offset(0, 10))],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-          for (var i = 0; i < _icons.length; i++)
-            Tooltip(
-              message: _icons[i].$3,
-              child: GestureDetector(
-                onTap: () => onTap(i),
-                behavior: HitTestBehavior.opaque,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: i == index ? C.surface3 : Colors.transparent,
-                    shape: BoxShape.circle,
+        child: Glass(
+          radius: BorderRadius.circular(40),
+          tint: 0.62,
+          blur: 26,
+          child: SizedBox(
+            height: 66,
+            child: LayoutBuilder(builder: (context, box) {
+              final w = (box.maxWidth - 16) / _icons.length;
+              return Stack(children: [
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 380),
+                  curve: Curves.easeOutBack,
+                  left: 8 + w * index + (w - 50) / 2,
+                  top: 8,
+                  width: 50,
+                  height: 50,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.10),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                      boxShadow: [BoxShadow(color: C.lime.withValues(alpha: 0.18), blurRadius: 18, spreadRadius: -6)],
+                    ),
                   ),
-                  child: Icon(i == index ? _icons[i].$2 : _icons[i].$1,
-                      color: i == index ? C.lime : C.muted, size: 22),
                 ),
-              ),
-            ),
-        ]),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(children: [
+                    for (var i = 0; i < _icons.length; i++)
+                      Expanded(
+                        child: Semantics(
+                          label: _icons[i].$3,
+                          button: true,
+                          child: Pressable(
+                            scale: 0.85,
+                            onTap: () => onTap(i),
+                            child: SizedBox(
+                              height: 66,
+                              child: Center(
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 220),
+                                  transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
+                                  child: Icon(
+                                    i == index ? _icons[i].$2 : _icons[i].$1,
+                                    key: ValueKey(i == index),
+                                    color: i == index ? C.lime : C.muted,
+                                    size: 23,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ]),
+                ),
+              ]);
+            }),
+          ),
+        ),
       ),
     );
   }

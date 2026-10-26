@@ -8,6 +8,7 @@ import '../../data/store.dart';
 import '../../logic/ranks.dart';
 import '../../logic/stats.dart';
 import '../common.dart';
+import '../fx.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'graph.dart';
@@ -292,9 +293,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   Widget _gameRow(BuildContext context, Player p, M m, int step) {
     final d = matchMmrDelta(m, step);
-    return InkWell(
+    return Pressable(
+      scale: 0.98,
       onTap: () => openMatch(context, m.matchId, accountId: p.accountId),
-      borderRadius: BorderRadius.circular(rInner),
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(color: C.surface2, borderRadius: BorderRadius.circular(rInner)),

@@ -5,6 +5,7 @@ import '../../data/refdata.dart';
 import '../../data/store.dart';
 import '../../logic/stats.dart';
 import '../common.dart';
+import '../fx.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
@@ -69,9 +70,9 @@ class _MatchesListScreenState extends State<MatchesListScreen> {
         for (var i = 0; i < slice.length; i++)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
-            child: InkWell(
+            child: Pressable(
+              scale: 0.98,
               onTap: () => openMatch(context, slice[i].matchId, accountId: p.accountId),
-              borderRadius: BorderRadius.circular(rInner),
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(color: C.surface, borderRadius: BorderRadius.circular(rInner)),

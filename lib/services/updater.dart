@@ -29,8 +29,12 @@ class Updater {
   static int _lastCheck = 0;
 
   static Future<(String, int)> current() async {
-    final info = await PackageInfo.fromPlatform();
-    return (info.version, int.tryParse(info.buildNumber) ?? 0);
+    try {
+      final info = await PackageInfo.fromPlatform();
+      return (info.version, int.tryParse(info.buildNumber) ?? 0);
+    } catch (_) {
+      return ('?', 0);
+    }
   }
 
   static Map<String, String> _headers(Store store, {bool binary = false}) => {

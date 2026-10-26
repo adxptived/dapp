@@ -84,7 +84,11 @@ ThemeData buildTheme() {
     textTheme: tt.apply(bodyColor: C.text, displayColor: C.text),
     appBarTheme: const AppBarTheme(backgroundColor: C.bg, elevation: 0, scrolledUnderElevation: 0),
     dividerColor: C.stroke,
-    splashFactory: InkSparkle.splashFactory,
+    splashFactory: NoSplash.splashFactory,
+    splashColor: Colors.transparent,
+    highlightColor: Colors.transparent,
+    hoverColor: Colors.transparent,
+    focusColor: Colors.transparent,
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: C.surface2,

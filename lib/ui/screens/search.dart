@@ -8,6 +8,7 @@ import '../../data/store.dart';
 import '../../logic/ranks.dart';
 import '../../logic/stats.dart';
 import '../common.dart';
+import '../fx.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'add_player.dart';
@@ -171,7 +172,8 @@ class _SearchScreenState extends State<SearchScreen> {
         for (final m in recent)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
-            child: InkWell(
+            child: Pressable(
+              scale: 0.98,
               onTap: () => openMatch(context, (m['match_id'] as num).toInt(), accountId: r.id),
               child: Container(
                 padding: const EdgeInsets.all(10),

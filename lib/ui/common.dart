@@ -9,11 +9,11 @@ import '../logic/stats.dart';
 import 'screens/add_player.dart';
 import 'screens/match.dart';
 import 'screens/player.dart';
+import 'fx.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-void push(BuildContext context, Widget page) =>
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+void push(BuildContext context, Widget page) => Navigator.of(context).push(fadeRoute(page));
 
 void openPlayer(BuildContext context, Player p) => push(context, PlayerScreen(accountId: p.accountId));
 
@@ -51,8 +51,8 @@ class MatchTile extends StatelessWidget {
     final first = rows.first;
     final m = first.$2;
     final won = m.won;
-    return InkWell(
-      borderRadius: BorderRadius.circular(rInner),
+    return Pressable(
+      scale: 0.98,
       onTap: () => openMatch(context, m.matchId, accountId: first.$1.accountId),
       child: Container(
         padding: const EdgeInsets.all(12),

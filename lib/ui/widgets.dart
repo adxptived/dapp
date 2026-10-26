@@ -1,11 +1,15 @@
 // Общие виджеты в стиле макета: карточки, круглые кнопки, шапка, таблицы, бар-метр, кольцо, мини-графики.
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/models.dart';
 import '../data/refdata.dart';
 import '../logic/ranks.dart';
+import 'fx.dart';
+import 'net_image.dart';
 import 'theme.dart';
 
 class AppCard extends StatelessWidget {
@@ -27,19 +31,24 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = Padding(padding: padding, child: child);
-    return Container(
+    final card = Container(
+      padding: padding,
       decoration: BoxDecoration(
         color: gradient == null ? color : null,
-        gradient: gradient,
+        gradient: gradient ??
+            (color == C.surface
+                ? const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF1B1B1B), C.surface],
+                  )
+                : null),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: C.stroke.withValues(alpha: 0.6)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: onTap == null
-          ? content
-          : Material(color: Colors.transparent, child: InkWell(onTap: onTap, child: content)),
+      child: child,
     );
+    return onTap == null ? card : Pressable(onTap: onTap, scale: 0.975, child: card);
   }
 }
 
@@ -50,23 +59,27 @@ class CircleBtn extends StatelessWidget {
   final double size;
   final Color? color;
   final String? tooltip;
-  const CircleBtn(this.icon, {super.key, this.onTap, this.filled = false, this.size = 46, this.color, this.tooltip});
+  final bool glass;
+  const CircleBtn(this.icon,
+      {super.key, this.onTap, this.filled = false, this.size = 46, this.color, this.tooltip, this.glass = false});
 
   @override
   Widget build(BuildContext context) {
-    final w = Material(
-      color: filled ? C.lime : (color ?? C.surface2),
-      shape: CircleBorder(side: filled ? BorderSide.none : const BorderSide(color: C.stroke)),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: Icon(icon, size: size * 0.44, color: filled ? C.onLime : C.text),
-        ),
-      ),
-    );
+    final iconW = Icon(icon, size: size * 0.44, color: filled ? C.onLime : C.text);
+    final Widget body = glass
+        ? Glass(radius: BorderRadius.circular(size), tint: 0.35, child: SizedBox(width: size, height: size, child: Center(child: iconW)))
+        : Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: filled ? C.lime : (color ?? C.surface2),
+              border: filled ? null : Border.all(color: Colors.white.withValues(alpha: 0.07)),
+              boxShadow: filled ? [BoxShadow(color: C.lime.withValues(alpha: 0.35), blurRadius: 18, spreadRadius: -4)] : null,
+            ),
+            child: Center(child: iconW),
+          );
+    final w = Pressable(onTap: onTap, scale: 0.88, child: body);
     return tooltip == null ? w : Tooltip(message: tooltip!, child: w);
   }
 }
@@ -89,9 +102,7 @@ class Avatar extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(letter, style: T.sub.copyWith(fontSize: size * 0.4)),
     );
-    final Widget img = (url != null && url!.isNotEmpty)
-        ? Image.network(url!, width: size, height: size, fit: BoxFit.cover, errorBuilder: (_, __, ___) => placeholder)
-        : placeholder;
+    final img = NetImage(url, width: size, height: size, placeholder: placeholder);
     final circle = Container(
       decoration: ring ? BoxDecoration(shape: BoxShape.circle, border: Border.all(color: C.lime, width: 2)) : null,
       padding: ring ? const EdgeInsets.all(2) : null,
@@ -125,11 +136,9 @@ class HeroIcon extends StatelessWidget {
     final h = RefData.I.hero(heroId);
     final w = portrait ? height * 16 / 9 : height;
     final ph = Container(width: w, height: height, color: C.surface3);
-    if (h == null) return ClipRRect(borderRadius: BorderRadius.circular(radius), child: ph);
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: Image.network(portrait ? h.image : h.icon,
-          width: w, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => ph),
+      child: h == null ? ph : NetImage(portrait ? h.image : h.icon, width: w, height: height, placeholder: ph),
     );
   }
 }
@@ -143,14 +152,11 @@ class ItemIcon extends StatelessWidget {
     final it = RefData.I.item(itemId);
     final w = height * 88 / 64;
     final ph = Container(width: w, height: height, color: C.surface3);
-    if (it == null) return ClipRRect(borderRadius: BorderRadius.circular(4), child: ph);
-    return Tooltip(
-      message: it.name,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        child: Image.network(it.image, width: w, height: height, fit: BoxFit.cover, errorBuilder: (_, __, ___) => ph),
-      ),
+    final img = ClipRRect(
+      borderRadius: BorderRadius.circular(5),
+      child: it == null ? ph : NetImage(it.image, width: w, height: height, placeholder: ph),
     );
+    return it == null ? img : Tooltip(message: it.name, child: img);
   }
 }
 
@@ -171,8 +177,8 @@ class RankBadge extends StatelessWidget {
             width: size,
             height: size,
             child: Stack(children: [
-              Image.network(url, width: size, height: size, errorBuilder: (_, __, ___) => const SizedBox()),
-              if (stars != null) Image.network(stars, width: size, height: size, errorBuilder: (_, __, ___) => const SizedBox()),
+              NetImage(url, width: size, height: size, fit: BoxFit.contain),
+              if (stars != null) NetImage(stars, width: size, height: size, fit: BoxFit.contain),
             ]),
           );
     if (!label) return icon;
@@ -198,9 +204,17 @@ class TopBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Row(children: [
-        CircleBtn(leading ?? (canPop ? Icons.arrow_back_ios_new_rounded : Icons.calendar_today_outlined),
-            onTap: onLeading ?? (canPop ? () => Navigator.of(context).pop() : null)),
-        Expanded(child: Text(title, textAlign: TextAlign.center, style: T.sub, overflow: TextOverflow.ellipsis)),
+        if (leading != null || canPop)
+          CircleBtn(leading ?? Icons.arrow_back_ios_new_rounded,
+              glass: true, onTap: onLeading ?? (canPop ? () => Navigator.of(context).pop() : null))
+        else
+          const SizedBox(width: 46),
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: Text(title, key: ValueKey(title), textAlign: TextAlign.center, style: T.sub, overflow: TextOverflow.ellipsis),
+          ),
+        ),
         SizedBox(width: 46, child: trailing ?? const SizedBox()),
       ]),
     );
@@ -218,19 +232,25 @@ class LimeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fg = dark ? C.text : C.onLime;
-    return SizedBox(
-      width: double.infinity,
-      height: 54,
-      child: Material(
-        color: dark ? C.surface2 : (onTap == null ? C.limeDim : C.lime),
-        shape: StadiumBorder(side: dark ? const BorderSide(color: C.stroke) : BorderSide.none),
-        child: InkWell(
-          customBorder: const StadiumBorder(),
-          onTap: busy ? null : onTap,
-          child: Center(
+    return Pressable(
+      onTap: busy ? null : onTap,
+      scale: 0.97,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        width: double.infinity,
+        height: 54,
+        decoration: BoxDecoration(
+          color: dark ? C.surface2 : C.lime,
+          borderRadius: BorderRadius.circular(40),
+          border: dark ? Border.all(color: Colors.white.withValues(alpha: 0.08)) : null,
+          boxShadow: dark || onTap == null ? null : [BoxShadow(color: C.lime.withValues(alpha: 0.28), blurRadius: 24, spreadRadius: -6, offset: const Offset(0, 8))],
+        ),
+        child: Center(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
             child: busy
-                ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: fg))
-                : Row(mainAxisSize: MainAxisSize.min, children: [
+                ? SizedBox(key: const ValueKey('b'), width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: fg))
+                : Row(key: ValueKey(label), mainAxisSize: MainAxisSize.min, children: [
                     if (icon != null) ...[Icon(icon, color: fg, size: 20), const SizedBox(width: 8)],
                     Text(label, style: T.sub.copyWith(color: fg)),
                   ]),
@@ -249,25 +269,24 @@ class SmallPill extends StatelessWidget {
   const SmallPill(this.text, {super.key, this.lime = false, this.onTap, this.icon});
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: lime ? C.lime : C.surface2,
-      shape: StadiumBorder(side: lime ? BorderSide.none : const BorderSide(color: C.stroke)),
-      child: InkWell(
-        customBorder: const StadiumBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Text(text, style: T.small.copyWith(color: lime ? C.onLime : C.text, fontWeight: FontWeight.w600)),
-            if (icon != null) ...[const SizedBox(width: 4), Icon(icon, size: 16, color: lime ? C.onLime : C.text)],
-          ]),
-        ),
+    final body = AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: lime ? C.lime : C.surface2,
+        borderRadius: BorderRadius.circular(30),
+        border: lime ? null : Border.all(color: Colors.white.withValues(alpha: 0.07)),
       ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(text, style: T.small.copyWith(color: lime ? C.onLime : C.text, fontWeight: FontWeight.w600)),
+        if (icon != null) ...[const SizedBox(width: 4), Icon(icon, size: 16, color: lime ? C.onLime : C.text)],
+      ]),
     );
+    return onTap == null ? body : Pressable(onTap: onTap, child: body);
   }
 }
 
-/// Выпадающий фильтр-«чип» (как Movement Type ⌄ на макете).
+/// Фильтр-«чип» (как Movement Type ⌄ на макете): выбор в стеклянной шторке.
 class DropChip<V> extends StatelessWidget {
   final String label;
   final V value;
@@ -277,30 +296,24 @@ class DropChip<V> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<V>(
-      color: C.surface2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rInner)),
-      onSelected: onChanged,
-      itemBuilder: (_) => [
-        for (final e in options.entries)
-          PopupMenuItem(
-            value: e.key,
-            child: Row(children: [
-              Expanded(child: Text(e.value, style: T.body)),
-              if (e.key == value) const Icon(Icons.check_rounded, color: C.lime, size: 18),
-            ]),
-          )
-      ],
+    return Pressable(
+      onTap: () async {
+        final v = await pickOption<V>(context, label, options, value);
+        if (v != null) onChanged(v);
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: C.surface,
           borderRadius: BorderRadius.circular(rInner),
-          border: Border.all(color: C.stroke),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Text('$label: ', style: T.tiny),
-          Text(options[value] ?? '', style: T.tiny.copyWith(color: C.text)),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: Text(options[value] ?? '', key: ValueKey(value), style: T.tiny.copyWith(color: C.text)),
+          ),
           const SizedBox(width: 4),
           const Icon(Icons.keyboard_arrow_down_rounded, size: 16),
         ]),
@@ -309,7 +322,7 @@ class DropChip<V> extends StatelessWidget {
   }
 }
 
-/// Сегментный переключатель (например, периоды).
+/// Сегментный переключатель с «едущей» лаймовой плашкой.
 class Segments<V> extends StatelessWidget {
   final V value;
   final Map<V, String> options;
@@ -318,29 +331,52 @@ class Segments<V> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final keys = options.keys.toList();
+    final idx = keys.indexOf(value).clamp(0, keys.length - 1);
     return Container(
+      height: 44,
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: C.surface, borderRadius: BorderRadius.circular(40), border: Border.all(color: C.stroke)),
-      child: Row(children: [
-        for (final e in options.entries)
-          Expanded(
-            child: GestureDetector(
-              onTap: () => onChanged(e.key),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(vertical: 9),
-                decoration: BoxDecoration(
-                  color: e.key == value ? C.lime : Colors.transparent,
-                  borderRadius: BorderRadius.circular(40),
-                ),
-                alignment: Alignment.center,
-                child: Text(e.value,
-                    style: T.small.copyWith(
-                        color: e.key == value ? C.onLime : C.muted, fontWeight: FontWeight.w700)),
+      decoration: BoxDecoration(
+        color: C.surface,
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+      ),
+      child: LayoutBuilder(builder: (context, box) {
+        final w = box.maxWidth / keys.length;
+        return Stack(children: [
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeOutBack,
+            left: w * idx,
+            top: 0,
+            bottom: 0,
+            width: w,
+            child: Container(
+              decoration: BoxDecoration(
+                color: C.lime,
+                borderRadius: BorderRadius.circular(40),
+                boxShadow: [BoxShadow(color: C.lime.withValues(alpha: 0.3), blurRadius: 14, spreadRadius: -4)],
               ),
             ),
           ),
-      ]),
+          Row(children: [
+            for (var i = 0; i < keys.length; i++)
+              Expanded(
+                child: Pressable(
+                  scale: 0.92,
+                  onTap: () => onChanged(keys[i]),
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 220),
+                      style: T.small.copyWith(color: i == idx ? C.onLime : C.muted, fontWeight: FontWeight.w700),
+                      child: Text(options[keys[i]]!, maxLines: 1, overflow: TextOverflow.fade, softWrap: false),
+                    ),
+                  ),
+                ),
+              ),
+          ]),
+        ]);
+      }),
     );
   }
 }
@@ -406,17 +442,22 @@ class FormDots extends StatelessWidget {
       ]);
 }
 
-/// Бар-метр из тонких вертикальных полосок (как «Monthly Sales Goal»).
+/// Бар-метр из тонких вертикальных полосок (как «Monthly Sales Goal»), заполняется с анимацией.
 class BarMeter extends StatelessWidget {
   final double fraction;
   final int bars;
   final double height;
   const BarMeter(this.fraction, {super.key, this.bars = 40, this.height = 44});
   @override
-  Widget build(BuildContext context) => SizedBox(
-        height: height,
-        width: double.infinity,
-        child: CustomPaint(painter: _BarMeterPainter(fraction.clamp(0, 1).toDouble(), bars)),
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: fraction.clamp(0, 1).toDouble()),
+        duration: const Duration(milliseconds: 900),
+        curve: Curves.easeOutCubic,
+        builder: (_, f, __) => SizedBox(
+          height: height,
+          width: double.infinity,
+          child: CustomPaint(painter: _BarMeterPainter(f, bars)),
+        ),
       );
 }
 
@@ -428,11 +469,13 @@ class _BarMeterPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final gap = size.width / n;
     final w = gap * 0.42;
-    final lit = (f * n).round();
+    final exact = f * n;
     for (var i = 0; i < n; i++) {
-      final p = Paint()..color = i < lit ? C.lime : C.faint.withValues(alpha: 0.55);
+      final part = (exact - i).clamp(0.0, 1.0);
       final x = i * gap + (gap - w) / 2;
-      canvas.drawRRect(RRect.fromLTRBR(x, 0, x + w, size.height, Radius.circular(w / 2)), p);
+      final r = RRect.fromLTRBR(x, 0, x + w, size.height, Radius.circular(w / 2));
+      canvas.drawRRect(r, Paint()..color = C.faint.withValues(alpha: 0.5));
+      if (part > 0) canvas.drawRRect(r, Paint()..color = C.lime.withValues(alpha: part));
     }
   }
 
@@ -440,7 +483,7 @@ class _BarMeterPainter extends CustomPainter {
   bool shouldRepaint(covariant _BarMeterPainter o) => o.f != f || o.n != n;
 }
 
-/// Кольцевая диаграмма с градиентом (как «Inventory Distribution»).
+/// Кольцевая диаграмма с градиентом (как «Inventory Distribution»), раскрывается по кругу.
 class Donut extends StatelessWidget {
   final List<(double, Color)> segments;
   final Widget center;
@@ -448,67 +491,78 @@ class Donut extends StatelessWidget {
   final double stroke;
   const Donut({super.key, required this.segments, required this.center, this.size = 200, this.stroke = 22});
   @override
-  Widget build(BuildContext context) => SizedBox(
-        width: size,
-        height: size,
-        child: CustomPaint(
-          painter: _DonutPainter(segments, stroke),
-          child: Center(child: center),
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: 1),
+        duration: const Duration(milliseconds: 1100),
+        curve: Curves.easeOutCubic,
+        builder: (_, t, child) => SizedBox(
+          width: size,
+          height: size,
+          child: CustomPaint(painter: _DonutPainter(segments, stroke, t), child: Center(child: child)),
         ),
+        child: center,
       );
 }
 
 class _DonutPainter extends CustomPainter {
   final List<(double, Color)> seg;
   final double stroke;
-  _DonutPainter(this.seg, this.stroke);
+  final double t;
+  _DonutPainter(this.seg, this.stroke, this.t);
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    final r = rect.deflate(stroke / 2 + 2);
-    final bg = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..color = C.surface3;
-    canvas.drawArc(r, 0, math.pi * 2, false, bg);
+    final r = rect.deflate(stroke / 2 + 6);
+    canvas.drawArc(
+        r,
+        0,
+        math.pi * 2,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke
+          ..color = C.surface3);
+    final c = rect.center;
+    final outer = size.width / 2;
+    final ticks = Paint()
+      ..color = C.faint.withValues(alpha: 0.6)
+      ..strokeWidth = 1;
+    for (var i = 0; i < 72; i++) {
+      final a = i / 72 * math.pi * 2;
+      final d = Offset(math.cos(a), math.sin(a));
+      canvas.drawLine(c + d * (outer - 1), c + d * (outer - 4), ticks);
+    }
     final total = seg.fold<double>(0, (a, b) => a + b.$1);
     if (total <= 0) return;
     var start = -math.pi / 2;
-    const gap = 0.05;
+    final limit = -math.pi / 2 + math.pi * 2 * t;
+    final gap = seg.where((s) => s.$1 > 0).length > 1 ? 0.06 : 0.0;
     for (final s in seg) {
       final sweep = s.$1 / total * math.pi * 2;
       if (sweep <= 0) continue;
-      final p = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke
-        ..strokeCap = StrokeCap.butt
-        ..shader = SweepGradient(
-          startAngle: start,
-          endAngle: start + sweep,
-          colors: [s.$2.withValues(alpha: 0.55), s.$2],
-          transform: const GradientRotation(0),
-        ).createShader(r);
-      canvas.drawArc(r, start + (seg.length > 1 ? gap / 2 : 0), math.max(0.001, sweep - (seg.length > 1 ? gap : 0)), false, p);
+      final end = math.min(start + sweep - gap, limit);
+      if (end > start) {
+        final p = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke
+          ..strokeCap = StrokeCap.butt
+          ..shader = SweepGradient(
+            colors: [s.$2.withValues(alpha: 0.45), s.$2],
+            stops: const [0, 1],
+            transform: GradientRotation(start),
+            endAngle: math.max(0.01, sweep),
+          ).createShader(r);
+        canvas.drawArc(r, start, end - start, false, p);
+      }
       start += sweep;
-    }
-    // внешнее тонкое кольцо-«тик»
-    final ticks = Paint()
-      ..color = C.faint.withValues(alpha: 0.5)
-      ..strokeWidth = 1;
-    final c = rect.center;
-    final outer = size.width / 2;
-    for (var i = 0; i < 60; i++) {
-      final a = i / 60 * math.pi * 2;
-      canvas.drawLine(c + Offset(math.cos(a), math.sin(a)) * (outer - 1),
-          c + Offset(math.cos(a), math.sin(a)) * (outer - 4), ticks);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _DonutPainter o) => true;
+  bool shouldRepaint(covariant _DonutPainter o) => o.t != t || o.seg != seg;
 }
 
-/// Столбики (как «Sales increase»): значения, подписи, выделенный столбик с плашкой.
+/// Столбики (как «Sales increase»): растут при появлении; выделенный столбик с плашкой.
 class MiniBars extends StatelessWidget {
   final List<double> values;
   final List<String> labels;
@@ -520,38 +574,46 @@ class MiniBars extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maxV = values.isEmpty ? 1.0 : math.max(1.0, values.reduce(math.max));
-    return SizedBox(
-      height: height + 22,
-      child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        for (var i = 0; i < values.length; i++)
-          Expanded(
-            child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-              if (i == highlight && tag != null)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                  decoration: BoxDecoration(color: C.lime, borderRadius: BorderRadius.circular(8)),
-                  child: Text(tag!, style: T.tiny.copyWith(color: C.onLime, fontSize: 9, fontWeight: FontWeight.w800)),
-                ),
-              _bars(values[i] / maxV, i == highlight, i > (highlight ?? values.length)),
-              const SizedBox(height: 6),
-              Text(labels[i], style: T.tiny.copyWith(fontSize: 10, color: i == highlight ? C.text : C.muted)),
-            ]),
-          ),
-      ]),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 900),
+      curve: Curves.easeOutCubic,
+      builder: (_, t, __) => SizedBox(
+        height: height + 22,
+        child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          for (var i = 0; i < values.length; i++)
+            Expanded(
+              child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+                if (i == highlight && tag != null)
+                  Opacity(
+                    opacity: t,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(color: C.lime, borderRadius: BorderRadius.circular(8)),
+                      child: Text(tag!, style: T.tiny.copyWith(color: C.onLime, fontSize: 9, fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                _bars(values[i] / maxV * t, i == highlight),
+                const SizedBox(height: 6),
+                Text(labels[i], style: T.tiny.copyWith(fontSize: 10, color: i == highlight ? C.text : C.muted)),
+              ]),
+            ),
+        ]),
+      ),
     );
   }
 
-  Widget _bars(double f, bool hi, bool future) {
+  Widget _bars(double f, bool hi) {
     final h = math.max(4.0, (height - 24) * f);
     return Row(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [
       for (var k = 0; k < 3; k++)
         Container(
           width: 4,
-          height: h * (k == 1 ? 1 : 0.62 + 0.1 * k),
+          height: math.max(4.0, h * (k == 1 ? 1 : 0.62 + 0.1 * k)),
           margin: const EdgeInsets.symmetric(horizontal: 1.5),
           decoration: BoxDecoration(
-            color: future ? C.faint.withValues(alpha: 0.4) : (hi ? C.lime : C.lime.withValues(alpha: 0.85)),
+            color: hi ? C.lime : C.lime.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -559,24 +621,30 @@ class MiniBars extends StatelessWidget {
   }
 }
 
-/// Линейный график нескольких серий [(x, y)].
+/// Линейный график нескольких серий [(x, y)]; рисуется слева направо.
 class LineChart extends StatelessWidget {
   final List<(String, Color, List<(double, double)>)> series;
   final double height;
   final String Function(double)? xLabel;
   const LineChart({super.key, required this.series, this.height = 220, this.xLabel});
   @override
-  Widget build(BuildContext context) => SizedBox(
-        height: height,
-        width: double.infinity,
-        child: CustomPaint(painter: _LinePainter(series, xLabel)),
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: 1),
+        duration: const Duration(milliseconds: 1100),
+        curve: Curves.easeOutCubic,
+        builder: (_, t, __) => SizedBox(
+          height: height,
+          width: double.infinity,
+          child: CustomPaint(painter: _LinePainter(series, xLabel, t)),
+        ),
       );
 }
 
 class _LinePainter extends CustomPainter {
   final List<(String, Color, List<(double, double)>)> series;
   final String Function(double)? xLabel;
-  _LinePainter(this.series, this.xLabel);
+  final double t;
+  _LinePainter(this.series, this.xLabel, this.t);
   @override
   void paint(Canvas canvas, Size size) {
     final pts = series.expand((s) => s.$3).toList();
@@ -615,6 +683,8 @@ class _LinePainter extends CustomPainter {
         tp.paint(canvas, Offset((o.dx - tp.width / 2).clamp(left, size.width - tp.width), size.height - bottom + 4));
       }
     }
+    canvas.save();
+    canvas.clipRect(Rect.fromLTWH(0, 0, left + w * t + 4, size.height));
     for (final s in series) {
       if (s.$3.isEmpty) continue;
       final path = Path();
@@ -626,6 +696,20 @@ class _LinePainter extends CustomPainter {
           path.lineTo(o.dx, o.dy);
         }
       }
+      if (series.length == 1) {
+        final area = Path.from(path)
+          ..lineTo(map(s.$3.last.$1, minY).dx, 6 + h)
+          ..lineTo(map(s.$3.first.$1, minY).dx, 6 + h)
+          ..close();
+        canvas.drawPath(
+            area,
+            Paint()
+              ..shader = LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [s.$2.withValues(alpha: 0.25), s.$2.withValues(alpha: 0)],
+              ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)));
+      }
       canvas.drawPath(
           path,
           Paint()
@@ -636,10 +720,11 @@ class _LinePainter extends CustomPainter {
       final last = map(s.$3.last.$1, s.$3.last.$2);
       canvas.drawCircle(last, 3.5, Paint()..color = s.$2);
     }
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _LinePainter o) => o.t != t || o.series != series;
 }
 
 class SectionTitle extends StatelessWidget {
@@ -687,25 +772,24 @@ class PlayerLine extends StatelessWidget {
   final Widget? lead;
   const PlayerLine({super.key, this.player, required this.name, this.sub, this.trailing, this.onTap, this.lead});
   @override
-  Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(rInner),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(children: [
-            if (lead != null) ...[lead!, const SizedBox(width: 10)],
-            Avatar(player?.avatar, size: 38, fallback: name),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(name, style: T.body.copyWith(fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
-                if (sub != null) Text(sub!, style: T.small, overflow: TextOverflow.ellipsis),
-              ]),
-            ),
-            if (trailing != null) trailing!,
+  Widget build(BuildContext context) {
+    final row = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(children: [
+        if (lead != null) ...[lead!, const SizedBox(width: 10)],
+        Avatar(player?.avatar, size: 38, fallback: name),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, style: T.body.copyWith(fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
+            if (sub != null) Text(sub!, style: T.small, overflow: TextOverflow.ellipsis),
           ]),
         ),
-      );
+        if (trailing != null) trailing!,
+      ]),
+    );
+    return onTap == null ? row : Pressable(onTap: onTap, scale: 0.98, child: row);
+  }
 }
 
 Widget placeBadge(int place) {
@@ -747,42 +831,71 @@ String fmtAgo(int ts) {
 String pct(double v) => '${(v * 100).toStringAsFixed(0)}%';
 
 void toast(BuildContext context, String text) {
+  ScaffoldMessenger.of(context).hideCurrentSnackBar();
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
 }
 
 Future<bool> confirm(BuildContext context, String title, String text, {String ok = 'Да'}) async {
-  final r = await showDialog<bool>(
-    context: context,
-    builder: (c) => AlertDialog(
-      title: Text(title, style: T.title),
-      content: Text(text, style: T.body),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Отмена', style: TextStyle(color: C.muted))),
-        TextButton(onPressed: () => Navigator.pop(c, true), child: Text(ok, style: const TextStyle(color: C.lime))),
-      ],
+  final r = await showGlassSheet<bool>(
+    context,
+    (c) => Padding(
+      padding: const EdgeInsets.fromLTRB(22, 16, 22, 18),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: T.title),
+        const SizedBox(height: 8),
+        Text(text, style: T.body.copyWith(color: C.muted)),
+        const SizedBox(height: 18),
+        Row(children: [
+          Expanded(child: LimeButton('Отмена', dark: true, onTap: () => Navigator.pop(c, false))),
+          const SizedBox(width: 10),
+          Expanded(child: LimeButton(ok, onTap: () => Navigator.pop(c, true))),
+        ]),
+      ]),
     ),
   );
   return r == true;
 }
 
 Future<String?> prompt(BuildContext context, String title,
-    {String? initial, String? hint, TextInputType? keyboard}) async {
+    {String? initial, String? hint, TextInputType? keyboard, bool paste = false}) async {
   final ctl = TextEditingController(text: initial);
-  final r = await showDialog<String>(
-    context: context,
-    builder: (c) => AlertDialog(
-      title: Text(title, style: T.title),
-      content: TextField(controller: ctl, autofocus: true, keyboardType: keyboard, decoration: InputDecoration(hintText: hint)),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(c), child: const Text('Отмена', style: TextStyle(color: C.muted))),
-        TextButton(onPressed: () => Navigator.pop(c, ctl.text), child: const Text('Готово', style: TextStyle(color: C.lime))),
-      ],
+  return showGlassSheet<String>(
+    context,
+    (c) => Padding(
+      padding: const EdgeInsets.fromLTRB(22, 16, 22, 18),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: T.title),
+        const SizedBox(height: 14),
+        TextField(
+          controller: ctl,
+          autofocus: true,
+          keyboardType: keyboard,
+          decoration: InputDecoration(
+            hintText: hint,
+            suffixIcon: paste
+                ? IconButton(
+                    icon: const Icon(Icons.content_paste_rounded, color: C.muted),
+                    onPressed: () async {
+                      final d = await Clipboard.getData('text/plain');
+                      if (d?.text != null) ctl.text = d!.text!.trim();
+                    },
+                  )
+                : null,
+          ),
+          onSubmitted: (v) => Navigator.pop(c, v),
+        ),
+        const SizedBox(height: 16),
+        Row(children: [
+          Expanded(child: LimeButton('Отмена', dark: true, onTap: () => Navigator.pop(c))),
+          const SizedBox(width: 10),
+          Expanded(child: LimeButton('Готово', onTap: () => Navigator.pop(c, ctl.text))),
+        ]),
+      ]),
     ),
   );
-  return r;
 }
 
-/// Скролл-экран с шапкой и отступом под нижнее меню.
+/// Экран со стеклянной шапкой поверх контента и «лесенкой» появления блоков.
 class PageScaffold extends StatelessWidget {
   final String title;
   final List<Widget> children;
@@ -790,6 +903,7 @@ class PageScaffold extends StatelessWidget {
   final Future<void> Function()? onRefresh;
   final IconData? leading;
   final VoidCallback? onLeading;
+  final bool animate;
   const PageScaffold({
     super.key,
     required this.title,
@@ -798,28 +912,58 @@ class PageScaffold extends StatelessWidget {
     this.onRefresh,
     this.leading,
     this.onLeading,
+    this.animate = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final top = MediaQuery.of(context).padding.top;
+    const barH = 62.0;
     final list = ListView(
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
-      children: children,
+      padding: EdgeInsets.fromLTRB(16, top + barH + 4, 16, 120),
+      children: [
+        for (var i = 0; i < children.length; i++) animate ? FadeSlideIn(index: i, child: children[i]) : children[i],
+      ],
     );
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: Column(children: [
-          TopBar(title: title, trailing: trailing, leading: leading, onLeading: onLeading),
-          Expanded(
-            child: onRefresh == null
-                ? list
-                : RefreshIndicator(
-                    color: C.onLime, backgroundColor: C.lime, onRefresh: onRefresh!, child: list),
+      body: Stack(children: [
+        Positioned.fill(
+          child: onRefresh == null
+              ? list
+              : RefreshIndicator(
+                  color: C.onLime,
+                  backgroundColor: C.lime,
+                  edgeOffset: top + barH,
+                  onRefresh: onRefresh!,
+                  child: list,
+                ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 0,
+          child: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              child: Container(
+                padding: EdgeInsets.only(top: top),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [C.bg.withValues(alpha: 0.92), C.bg.withValues(alpha: 0.55)],
+                  ),
+                ),
+                child: SizedBox(
+                  height: barH,
+                  child: TopBar(title: title, trailing: trailing, leading: leading, onLeading: onLeading),
+                ),
+              ),
+            ),
           ),
-        ]),
-      ),
+        ),
+      ]),
     );
   }
 }
