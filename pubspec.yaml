@@ -1,0 +1,30 @@
+name: dapp
+description: "Dota Party — рейтинг, MMR и статистика ранкед-игр пати Dota 2."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.6.0
+  path_provider: ^2.1.6
+  provider: ^6.1.5
+  google_fonts: ^9.0.0
+  url_launcher: ^6.3.3
+  package_info_plus: ^10.2.2
+  open_filex: ^5.0.0
+  file_picker: ^13.3.0
+  flutter_local_notifications: ^22.3.3
+  workmanager: ^0.10.10
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,45 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+
+import 'data/store.dart';
+import 'services/background.dart';
+import 'services/notifier.dart';
+import 'ui/shell.dart';
+import 'ui/theme.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarColor: C.bg,
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
+  final store = await Store.open();
+  // оповещения и сводки, когда приложение открыто
+  Store.onEvents = (s, events) async {
+    await Notifier.handleEvents(s, events);
+    await Notifier.periodic(s);
+  };
+  await Notifier.init();
+  await Background.init();
+  await Background.schedule(store.settings.pollMinutes);
+  runApp(ChangeNotifierProvider.value(value: store, child: const DotaPartyApp()));
+  Future.delayed(const Duration(seconds: 2), Notifier.requestPermission);
+}
+
+class DotaPartyApp extends StatelessWidget {
+  const DotaPartyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Dota Party',
+      debugShowCheckedModeBanner: false,
+      theme: buildTheme(),
+      darkTheme: buildTheme(),
+      themeMode: ThemeMode.dark,
+      home: Shell(key: Shell.shellKey),
+    );
+  }
+}

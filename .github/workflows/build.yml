@@ -1,0 +1,113 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build
+  cancel-in-progress: false
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.ver.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 30
+
+      - id: ver
+        run: |
+          echo "name=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "code=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "tag=v1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Платформенные файлы (flutter create + патчи)
+        run: |
+          mkdir -p logs
+          flutter --version | tee logs/version.log
+          flutter create --org com.adxptived --project-name dapp --platforms android,ios . 2>&1 | tee logs/create.log
+          rm -rf test
+          python3 tool/patch_platforms.py 2>&1 | tee logs/patch.log
+
+      - name: Зависимости
+        run: flutter pub get 2>&1 | tee logs/pub.log
+
+      - name: Анализ
+        continue-on-error: true
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee logs/analyze.log
+
+      - name: Сборка APK
+        run: |
+          set -o pipefail
+          flutter build apk --release --build-name=${{ steps.ver.outputs.name }} --build-number=${{ steps.ver.outputs.code }} 2>&1 | tee logs/build.log
+          cp build/app/outputs/flutter-apk/app-release.apk dapp-${{ steps.ver.outputs.name }}.apk
+
+      - name: Заметки к релизу
+        run: |
+          {
+            echo "Сборка ${{ steps.ver.outputs.name }}"
+            echo
+            git log -15 --pretty='- %s' | grep -v 'chore(ci)' || true
+          } > notes.md
+
+      - name: Релиз
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: Dota Party ${{ steps.ver.outputs.name }}
+          body_path: notes.md
+          files: dapp-${{ steps.ver.outputs.name }}.apk
+          make_latest: true
+
+      - name: Логи сборки → ветка ci-logs
+        if: always()
+        run: |
+          cp -r logs /tmp/logs || mkdir -p /tmp/logs
+          cd /tmp/logs
+          echo "${{ job.status }} run ${{ github.run_number }}" > status.txt
+          git init -q && git config user.name ci && git config user.email ci@users.noreply.github.com
+          git checkout -q -b ci-logs && git add -A && git commit -qm "android ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" ci-logs
+
+  ios:
+    needs: android
+    runs-on: macos-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Сборка iOS без подписи
+        run: |
+          flutter create --org com.adxptived --project-name dapp --platforms android,ios .
+          rm -rf test
+          pip3 install --break-system-packages pillow >/dev/null 2>&1 || true
+          python3 tool/patch_platforms.py
+          flutter pub get
+          flutter build ios --release --no-codesign --build-name=1.0.${{ github.run_number }} --build-number=${{ github.run_number }}
+          mkdir Payload && cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -qr dapp-unsigned.ipa Payload
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.android.outputs.tag }}
+          files: dapp-unsigned.ipa
