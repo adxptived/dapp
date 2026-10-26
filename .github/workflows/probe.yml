@@ -1,0 +1,29 @@
+name: probe
+on:
+  push:
+    branches: [probe]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: |
+          mkdir -p /tmp/out
+          flutter --version > /tmp/out/version.txt 2>&1
+          cd /tmp && flutter create --org com.adxptived --project-name dapp --platforms android,ios gen > /tmp/out/create.txt 2>&1
+          cd gen
+          for f in android/app/build.gradle.kts android/settings.gradle.kts android/build.gradle.kts android/gradle.properties android/gradle/wrapper/gradle-wrapper.properties android/app/src/main/AndroidManifest.xml pubspec.yaml; do echo "=== $f"; cat $f; done > /tmp/out/templates.txt 2>&1
+          find . -type f -not -path './.dart_tool/*' | sort > /tmp/out/files.txt
+          flutter pub add http path_provider provider google_fonts url_launcher package_info_plus open_filex file_picker flutter_local_notifications workmanager > /tmp/out/pubadd.txt 2>&1 || true
+          cat pubspec.yaml >> /tmp/out/pubadd.txt
+      - if: always()
+        run: |
+          cd /tmp/out
+          git init -q; git config user.name ci; git config user.email ci@e.com
+          git checkout -q -b ci-logs; git add -A; git commit -qm "probe logs"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" ci-logs
