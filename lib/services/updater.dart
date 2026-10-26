@@ -80,30 +80,88 @@ class Updater {
     );
   }
 
+  static Future<Directory> _dir() async {
+    final base = await getApplicationSupportDirectory();
+    final d = Directory('${base.path}/updates');
+    await d.create(recursive: true);
+    return d;
+  }
+
+  /// Готовый скачанный APK этой версии (если уже скачан целиком) — ставится без повторной загрузки.
+  static Future<File?> downloaded(UpdateInfo u) async {
+    try {
+      final f = File('${(await _dir()).path}/dapp-${u.build}.apk');
+      if (await f.exists() && (u.size == 0 || await f.length() == u.size)) return f;
+    } catch (_) {}
+    return null;
+  }
+
+  /// Скачать APK с докачкой: обрыв связи не начинает загрузку заново — продолжаем с места обрыва,
+  /// автоматически до 8 попыток. Уже скачанный файл не качается повторно.
   static Future<File> download(Store store, UpdateInfo u, void Function(double) onProgress) async {
+    final ready = await downloaded(u);
+    if (ready != null) {
+      onProgress(1);
+      return ready;
+    }
+    final dir = await _dir();
+    // старые версии больше не нужны
+    try {
+      await for (final f in dir.list()) {
+        if (f is File && !f.path.contains('dapp-${u.build}.')) await f.delete();
+      }
+    } catch (_) {}
+    final part = File('${dir.path}/dapp-${u.build}.apk.part');
     final useApi = store.settings.githubToken.trim().isNotEmpty && u.apiAssetUrl != null;
     final url = useApi ? u.apiAssetUrl! : u.apkUrl!;
-    final req = http.Request('GET', Uri.parse(url))..headers.addAll(_headers(store, binary: true));
-    final client = http.Client();
-    try {
-      final resp = await client.send(req);
-      if (resp.statusCode != 200) throw Exception('Скачивание: HTTP ${resp.statusCode}');
-      final total = resp.contentLength ?? u.size;
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/dapp-update-${u.build}.apk');
-      final sink = file.openWrite();
-      var got = 0;
-      await for (final chunk in resp.stream) {
-        sink.add(chunk);
-        got += chunk.length;
-        Traffic.add(chunk.length);
-        if (total > 0) onProgress(got / total);
+    Object? lastErr;
+    for (var attempt = 0; attempt < 8; attempt++) {
+      var have = await part.exists() ? await part.length() : 0;
+      if (u.size > 0 && have >= u.size) break;
+      final client = http.Client();
+      try {
+        final req = http.Request('GET', Uri.parse(url))..headers.addAll(_headers(store, binary: true));
+        if (have > 0) req.headers['Range'] = 'bytes=$have-';
+        final resp = await client.send(req).timeout(const Duration(seconds: 30));
+        if (resp.statusCode == 200 && have > 0) {
+          have = 0; // сервер не умеет докачку — начинаем заново
+          await part.writeAsBytes(const [], flush: true);
+        } else if (resp.statusCode == 416) {
+          break; // уже всё скачано
+        } else if (resp.statusCode != 200 && resp.statusCode != 206) {
+          throw Exception('HTTP ${resp.statusCode}');
+        }
+        final total = u.size > 0 ? u.size : have + (resp.contentLength ?? 0);
+        final sink = part.openWrite(mode: have > 0 ? FileMode.append : FileMode.write);
+        var got = have;
+        try {
+          await for (final chunk in resp.stream.timeout(const Duration(seconds: 30))) {
+            sink.add(chunk);
+            got += chunk.length;
+            Traffic.add(chunk.length);
+            if (total > 0) onProgress(got / total);
+          }
+        } finally {
+          await sink.flush();
+          await sink.close();
+        }
+        if (u.size == 0 || got >= u.size) break;
+      } catch (e) {
+        lastErr = e;
+        await Future.delayed(Duration(seconds: 1 + attempt * 2));
+      } finally {
+        client.close();
       }
-      await sink.close();
-      return file;
-    } finally {
-      client.close();
     }
+    final size = await part.exists() ? await part.length() : 0;
+    if (size == 0 || (u.size > 0 && size < u.size)) {
+      final pctDone = u.size > 0 ? (size * 100 ~/ u.size) : 0;
+      throw Exception('Связь обрывается (скачано $pctDone%). Нажмите ещё раз — загрузка продолжится с места обрыва.'
+          '');
+    }
+    final apk = File('${dir.path}/dapp-${u.build}.apk');
+    if (await apk.exists()) await apk.delete();
+    return part.rename(apk.path);
   }
 
   static Future<void> install(File apk) async {
@@ -154,6 +212,15 @@ class _UpdateSheet extends StatefulWidget {
 class _UpdateSheetState extends State<_UpdateSheet> {
   double? progress;
   String? error;
+  bool ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Updater.downloaded(widget.info).then((f) {
+      if (mounted && f != null) setState(() => ready = true);
+    });
+  }
 
   Future<void> _go() async {
     final u = widget.info;
@@ -219,8 +286,14 @@ class _UpdateSheetState extends State<_UpdateSheet> {
             const SizedBox(height: 8),
             Text('Скачиваю… ${((progress ?? 0) * 100).toStringAsFixed(0)}%', style: T.small),
           ] else
-            LimeButton(Platform.isAndroid ? 'Скачать и установить' : 'Открыть страницу релиза',
-                icon: Icons.download_rounded, onTap: _go),
+            LimeButton(
+                !Platform.isAndroid
+                    ? 'Открыть страницу релиза'
+                    : ready
+                        ? 'Установить (уже скачано)'
+                        : 'Скачать и установить',
+                icon: ready ? Icons.install_mobile_rounded : Icons.download_rounded,
+                onTap: _go),
           if (error != null) ...[
             const SizedBox(height: 10),
             Text(error!, style: T.small.copyWith(color: C.red)),

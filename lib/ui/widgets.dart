@@ -984,7 +984,7 @@ Future<String?> prompt(BuildContext context, String title,
 }
 
 /// Экран со стеклянной шапкой поверх контента и «лесенкой» появления блоков.
-class PageScaffold extends StatelessWidget {
+class PageScaffold extends StatefulWidget {
   final String title;
   final List<Widget> children;
   final Widget? trailing;
@@ -1002,6 +1002,29 @@ class PageScaffold extends StatelessWidget {
     this.onLeading,
     this.animate = true,
   });
+
+  @override
+  State<PageScaffold> createState() => _PageScaffoldState();
+}
+
+class _PageScaffoldState extends State<PageScaffold> {
+  bool _marked = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_marked) return;
+    _marked = true;
+    if (TickerMode.of(context)) FadeSlideIn.pageOpened = DateTime.now();
+  }
+
+  String get title => widget.title;
+  List<Widget> get children => widget.children;
+  Widget? get trailing => widget.trailing;
+  Future<void> Function()? get onRefresh => widget.onRefresh;
+  IconData? get leading => widget.leading;
+  VoidCallback? get onLeading => widget.onLeading;
+  bool get animate => widget.animate;
 
   @override
   Widget build(BuildContext context) {

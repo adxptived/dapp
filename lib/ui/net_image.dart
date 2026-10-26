@@ -85,7 +85,7 @@ class ImageCache2 {
     final hit = peek(url);
     if (hit != null) return Future.value(hit);
     final f = _failed[url];
-    if (f != null && DateTime.now().difference(f).inSeconds < 20) return Future.value(null);
+    if (f != null && DateTime.now().difference(f).inSeconds < 8) return Future.value(null);
     return _inflight.putIfAbsent(url, () => _load(url).whenComplete(() => _inflight.remove(url)));
   }
 
@@ -105,27 +105,83 @@ class ImageCache2 {
     } catch (_) {}
     await _slot();
     try {
-      final r = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 20));
-      if (r.statusCode != 200 || r.bodyBytes.isEmpty) {
-        _failed[url] = DateTime.now();
-        return null;
+      // несколько попыток и запасные адреса Steam CDN: если один домен режется сетью/VPN, берём другой
+      for (var attempt = 0; attempt < 3; attempt++) {
+        for (final u in _mirrors(url)) {
+          try {
+            final r = await _client.get(Uri.parse(u), headers: const {'User-Agent': 'Mozilla/5.0 dapp'}).timeout(const Duration(seconds: 15));
+            if (r.statusCode == 404) continue;
+            if (r.statusCode != 200 || r.bodyBytes.isEmpty) {
+              lastError = 'HTTP ${r.statusCode} · ${Uri.parse(u).host}';
+              continue;
+            }
+            final b = r.bodyBytes;
+            Traffic.add(b.length);
+            _remember(url, b);
+            if (file != null) {
+              try {
+                await file.writeAsBytes(b, flush: false);
+                _onDisk.add(name);
+              } catch (_) {}
+            }
+            okCount++;
+            return b;
+          } catch (e) {
+            lastError = '${e.runtimeType}: ${'$e'.split('\n').first} · ${Uri.parse(u).host}';
+            _resetClient();
+          }
+        }
+        await Future.delayed(Duration(milliseconds: 600 * (attempt + 1)));
       }
-      final b = r.bodyBytes;
-      Traffic.add(b.length);
-      _remember(url, b);
-      if (file != null) {
-        try {
-          await file.writeAsBytes(b, flush: false);
-          _onDisk.add(name);
-        } catch (_) {}
-      }
-      return b;
-    } catch (_) {
       _failed[url] = DateTime.now();
+      failCount++;
       return null;
     } finally {
       _release();
     }
+  }
+
+  static http.Client _client = http.Client();
+  static void _resetClient() {
+    try {
+      _client.close();
+    } catch (_) {}
+    _client = http.Client();
+  }
+
+  static String? lastError;
+  static int okCount = 0, failCount = 0;
+
+  static const _steamHosts = [
+    'cdn.cloudflare.steamstatic.com',
+    'cdn.akamai.steamstatic.com',
+    'cdn.steamstatic.com',
+    'steamcdn-a.akamaihd.net',
+  ];
+  static const _avatarHosts = [
+    'avatars.steamstatic.com',
+    'avatars.akamai.steamstatic.com',
+    'avatars.cloudflare.steamstatic.com',
+    'steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars',
+  ];
+
+  /// Тот же файл на запасных доменах Steam.
+  static List<String> _mirrors(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return [url];
+    final host = uri.host;
+    if (_steamHosts.contains(host)) {
+      return [url, for (final h in _steamHosts) if (h != host) uri.replace(host: h).toString()];
+    }
+    if (host.startsWith('avatars.')) {
+      final path = uri.path; // /ab/abcd..._full.jpg
+      return [
+        url,
+        for (final h in _avatarHosts)
+          if (!h.startsWith(host)) 'https://$h${h.contains('/') ? (path.startsWith('/') ? path : '/$path') : path}',
+      ];
+    }
+    return [url];
   }
 
   /// Скачать заранее на диск (иконки всех героев): уже скачанные файлы не трогаем и в память не читаем.
@@ -200,7 +256,8 @@ class CachedNetImage extends ImageProvider<CachedNetImage> {
 }
 
 /// Картинка из кэша: мгновенно, если уже загружалась; первый раз — плавно проявляется.
-class NetImage extends StatelessWidget {
+/// Если загрузка сорвалась (обрыв сети), пробует ещё раз сама — через 3, 10 и 30 секунд.
+class NetImage extends StatefulWidget {
   final String? url;
   final double? width, height;
   final BoxFit fit;
@@ -208,21 +265,60 @@ class NetImage extends StatelessWidget {
   final Widget? placeholder;
   const NetImage(this.url,
       {super.key, this.width, this.height, this.fit = BoxFit.cover, this.alignment = Alignment.center, this.placeholder});
+  @override
+  State<NetImage> createState() => _NetImageState();
+}
+
+class _NetImageState extends State<NetImage> {
+  int attempt = 0;
+  Timer? retry;
+
+  @override
+  void didUpdateWidget(covariant NetImage old) {
+    super.didUpdateWidget(old);
+    if (old.url != widget.url) {
+      attempt = 0;
+      retry?.cancel();
+    }
+  }
+
+  @override
+  void dispose() {
+    retry?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleRetry() {
+    if (retry != null || attempt >= 3) return;
+    const delays = [3, 10, 30];
+    retry = Timer(Duration(seconds: delays[attempt]), () {
+      if (!mounted) return;
+      PaintingBinding.instance.imageCache.evict(CachedNetImage(widget.url!));
+      setState(() {
+        attempt++;
+        retry = null;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final ph = placeholder ?? SizedBox(width: width, height: height);
-    final u = url;
+    final ph = widget.placeholder ?? SizedBox(width: widget.width, height: widget.height);
+    final u = widget.url;
     if (u == null || u.isEmpty) return ph;
     return Image(
+      key: ValueKey('$u#$attempt'),
       image: CachedNetImage(u),
-      width: width,
-      height: height,
-      fit: fit,
-      alignment: alignment,
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      alignment: widget.alignment,
       gaplessPlayback: true,
       filterQuality: FilterQuality.medium,
-      errorBuilder: (_, __, ___) => ph,
+      errorBuilder: (_, __, ___) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleRetry());
+        return ph;
+      },
       frameBuilder: (context, child, frame, sync) {
         if (sync) return child;
         return Stack(fit: StackFit.passthrough, children: [

@@ -213,16 +213,18 @@ class _AuroraPainter extends CustomPainter {
 
 /// Плавное появление снизу с задержкой по номеру элемента (лесенка).
 class FadeSlideIn extends StatefulWidget {
+  /// Когда открылся текущий экран (ставит PageScaffold).
+  static DateTime pageOpened = DateTime.now();
   final Widget child;
   final int index;
   final double offset;
-  const FadeSlideIn({super.key, required this.child, this.index = 0, this.offset = 18});
+  const FadeSlideIn({super.key, required this.child, this.index = 0, this.offset = 12});
   @override
   State<FadeSlideIn> createState() => _FadeSlideInState();
 }
 
 class _FadeSlideInState extends State<FadeSlideIn> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 420));
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 260));
   late final Animation<double> _a = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
   Timer? _t;
 
@@ -233,11 +235,13 @@ class _FadeSlideInState extends State<FadeSlideIn> with SingleTickerProviderStat
     super.didChangeDependencies();
     if (_started) return;
     _started = true;
-    if (!TickerMode.of(context)) {
+    // при прокрутке элементы появляются сразу; анимируем только первые секунды после открытия экрана
+    final age = DateTime.now().difference(FadeSlideIn.pageOpened).inMilliseconds;
+    if (!TickerMode.of(context) || age > 500) {
       _c.value = 1; // экран строится в фоне — без анимации, чтобы ничего не «застряло» невидимым
       return;
     }
-    final delay = (widget.index.clamp(0, 8)) * 45;
+    final delay = (widget.index.clamp(0, 6)) * 30;
     if (delay == 0) {
       _c.forward();
     } else {

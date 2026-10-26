@@ -184,7 +184,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _tile(
             Icons.image_outlined,
             'Иконки героев',
-            prefetching ? 'скачиваю…' : 'в кэше ${cache.$1} файлов · ${(cache.$2 / 1024 / 1024).toStringAsFixed(1)} МБ',
+            prefetching
+                ? 'скачиваю…'
+                : 'в кэше ${cache.$1} файлов · ${(cache.$2 / 1024 / 1024).toStringAsFixed(1)} МБ'
+                    '${ImageCache2.failCount > 0 ? '\nне скачалось: ${ImageCache2.failCount} · ${ImageCache2.lastError ?? ''}' : ''}',
             trailing: prefetching
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.download_rounded, color: C.muted),
